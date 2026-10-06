@@ -1,0 +1,9 @@
+.build/
+dist/
+.DS_Store
+.env
+.claude/worktrees/
+vendor/mediaremote-adapter/build/
+dictionary.txt
+logs/
+*.bin
