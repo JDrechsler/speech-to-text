@@ -8,6 +8,14 @@ enum EnginePreference: String, CaseIterable, Identifiable {
     static let firstLaunchDefault: EnginePreference = .whisper
     static let storageKey = "enginePreference"
 
+    static let lastCloudStorageKey = "lastCloudEngine"
+
+    @MainActor static var preferredCloud: EnginePreference {
+        let last = UserDefaults.standard.string(forKey: lastCloudStorageKey)
+        if let engine = cloud.first(where: { $0.rawValue == last }) { return engine }
+        return cloud.first(where: \.isReady) ?? cloud[0]
+    }
+
     static var stored: EnginePreference {
         guard let raw = UserDefaults.standard.string(forKey: storageKey) else {
             return firstLaunchDefault

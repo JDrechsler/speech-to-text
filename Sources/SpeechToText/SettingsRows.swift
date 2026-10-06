@@ -29,6 +29,7 @@ struct EngineRow<Details: View>: View {
     let engine: EnginePreference
     let isSelected: Bool
     let status: EngineStatus
+    var showsSelector = true
     @Binding var isExpanded: Bool
     let select: () -> Void
     @ViewBuilder let details: () -> Details
@@ -36,15 +37,17 @@ struct EngineRow<Details: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Button(action: select) {
-                    Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                        .font(.title3)
-                        .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                if showsSelector {
+                    Button(action: select) {
+                        Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
+                            .font(.title3)
+                            .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help(isSelected ? "In use" : "Use \(engine.displayName)")
+                    .accessibilityLabel("Use \(engine.displayName). \(engine.privacyStatement)")
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
-                .buttonStyle(.plain)
-                .help(isSelected ? "In use" : "Use \(engine.displayName)")
-                .accessibilityLabel("Use \(engine.displayName). \(engine.privacyStatement)")
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
 
                 Button {
                     withAnimation(.snappy(duration: 0.2)) { isExpanded.toggle() }
@@ -69,7 +72,7 @@ struct EngineRow<Details: View>: View {
             }
             if isExpanded {
                 details()
-                    .padding(.leading, 30)
+                    .padding(.leading, showsSelector ? 30 : 0)
                     .padding(.bottom, 4)
             }
         }

@@ -16,7 +16,7 @@ final class SettingsWindowController {
             let window = NSWindow(contentViewController: hosting)
             window.title = "Speech to Text Settings"
             window.styleMask = [.titled, .closable, .resizable, .miniaturizable]
-            window.setContentSize(NSSize(width: 620, height: 540))
+            window.setContentSize(NSSize(width: 600, height: 500))
             window.isReleasedWhenClosed = false
             window.center()
             self.window = window
@@ -41,29 +41,31 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            if !state.enginePreference.isReady {
-                Section { setupBanner }
-            }
             Section {
-                engineRow(.whisper) { whisperDetails }
-            } header: {
-                groupHeader(
-                    "On this Mac", systemImage: "lock.shield.fill", tint: .green,
-                    subtitle: "Private and offline. Your voice never leaves this Mac.")
-            }
-            Section {
-                ForEach(EnginePreference.cloud) { engine in
-                    engineRow(engine) { cloudDetails(engine) }
+                Picker("Transcribe", selection: usesCloud) {
+                    Label("On this Mac", systemImage: "lock.fill").tag(false)
+                    Label("Cloud", systemImage: "icloud.fill").tag(true)
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                privacyNote
+                if !state.enginePreference.isReady { setupBanner }
             } header: {
-                groupHeader(
-                    "Cloud", systemImage: "icloud.and.arrow.up.fill", tint: .orange,
-                    subtitle: "Each recording is uploaded to the provider. Needs your own API key.")
+                Text("Where your speech is transcribed")
+            }
+            Section {
+                if state.enginePreference.isLocal {
+                    engineRow(.whisper, showsSelector: false) { whisperDetails }
+                } else {
+                    ForEach(EnginePreference.cloud) { engine in
+                        engineRow(engine) { cloudDetails(engine) }
+                    }
+                }
             }
             generalSection
         }
         .formStyle(.grouped)
-        .frame(minWidth: 560, minHeight: 420)
+        .frame(minWidth: 540, minHeight: 380)
         .onAppear(perform: expandEngineThatNeedsSetup)
         .confirmationDialog(
             "Delete \(modelPendingDeletion?.name ?? "model")?",
@@ -85,40 +87,50 @@ struct SettingsView: View {
         }
     }
 
+    private var usesCloud: Binding<Bool> {
+        .init(
+            get: { !state.enginePreference.isLocal },
+            set: { wantsCloud in select(wantsCloud ? .preferredCloud : .whisper) })
+    }
+
+    private var privacyNote: some View {
+        let isLocal = state.enginePreference.isLocal
+        return Label {
+            Text(
+                isLocal
+                    ? "Private and offline. Your voice never leaves this Mac."
+                    : "Each recording is uploaded to the provider you pick. Needs your own API key."
+            )
+        } icon: {
+            Image(systemName: isLocal ? "lock.shield.fill" : "icloud.and.arrow.up.fill")
+        }
+        .font(.callout)
+        .foregroundStyle(isLocal ? .green : .orange)
+    }
+
     private var setupBanner: some View {
         Label {
             Text(
                 state.enginePreference.isLocal
                     ? "Download a Whisper model to start dictating."
-                    : "Add your \(state.enginePreference.provider) details, or pick another engine."
+                    : "Add your \(state.enginePreference.provider) API key below, or pick another provider."
             )
+            .foregroundStyle(.primary)
         } icon: {
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
         }
         .font(.callout.weight(.medium))
     }
 
-    private func groupHeader(_ title: String, systemImage: String, tint: Color, subtitle: String)
-        -> some View
-    {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Label(title, systemImage: systemImage)
-                .font(.headline)
-                .foregroundStyle(tint)
-            Text(subtitle)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-        }
-        .textCase(nil)
-    }
-
     private func engineRow<Details: View>(
-        _ engine: EnginePreference, @ViewBuilder details: @escaping () -> Details
+        _ engine: EnginePreference, showsSelector: Bool = true,
+        @ViewBuilder details: @escaping () -> Details
     ) -> some View {
         EngineRow(
             engine: engine,
             isSelected: state.enginePreference == engine,
             status: status(of: engine),
+            showsSelector: showsSelector,
             isExpanded: .init(
                 get: { expanded.contains(engine) },
                 set: { isOpen in

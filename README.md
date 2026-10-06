@@ -6,7 +6,10 @@ Press **⌥ Space** anywhere, speak, press **⌥ Space** again. Your words are t
 
 You choose where the speech is turned into text: **privately on your own Mac**, or with a **cloud service** you bring your own key for. The app always shows which one is active.
 
-<img src="docs/settings.png" width="620" alt="Settings window: the offline Whisper engine on top, cloud engines below, each marked Offline or Uploads audio">
+<p>
+  <img src="docs/settings-on-this-mac.png" width="420" alt="Settings set to On this Mac: private and offline, Whisper Large v3 Turbo ready">
+  <img src="docs/settings-cloud.png" width="420" alt="Settings set to Cloud: each provider is marked Uploads audio and asks for your own API key">
+</p>
 
 ## Where does my voice go?
 
@@ -19,7 +22,7 @@ You choose where the speech is turned into text: **privately on your own Mac**, 
 
 How you can tell at a glance:
 
-- Settings groups the engines under a green **On this Mac** heading and an orange **Cloud** heading. Every cloud engine says which company receives the audio.
+- Settings starts with one switch: **On this Mac** or **Cloud**. Cloud providers only appear once you pick Cloud, and each one is marked **Uploads audio** with the company's name.
 - While you record, the overlay shows a badge: **🔒 On this Mac** or **☁️ Cloud · ElevenLabs** (or whichever provider you picked).
 - The menu bar's Engine menu is split the same way.
 
@@ -75,7 +78,7 @@ The language is detected automatically. If it guesses wrong on short recordings,
 
 Cloud engines can be faster on older Macs and handle some accents or mixed languages better. Each provider bills you for your usage on your own account.
 
-Open **Settings**, click the provider's row to open it, paste your key and click **Save**. Then click the round button in front of it to use it.
+Open **Settings** and switch to **Cloud**. Pick a provider with the round button, paste your key into the field that opens and click **Save**.
 
 - **ElevenLabs Scribe v2:** create a key at [elevenlabs.io → Developers → API keys](https://elevenlabs.io/app/developers/api-keys).
 - **AssemblyAI Universal-3.5 Pro:** copy your key from the [AssemblyAI dashboard](https://www.assemblyai.com/dashboard/api-keys).

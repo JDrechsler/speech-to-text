@@ -38,6 +38,10 @@ final class AppState: ObservableObject {
     @Published var enginePreference: EnginePreference = .stored {
         didSet {
             UserDefaults.standard.set(enginePreference.rawValue, forKey: EnginePreference.storageKey)
+            if !enginePreference.isLocal {
+                UserDefaults.standard.set(
+                    enginePreference.rawValue, forKey: EnginePreference.lastCloudStorageKey)
+            }
             statusMessage = ""
             prepareEngine()
         }
