@@ -47,11 +47,16 @@ mkdir -p "$RES_DIR"
 cp "$ADAPTER_DIR/bin/mediaremote-adapter.pl" "$RES_DIR/"
 cp -R "$ADAPTER_FRAMEWORK" "$RES_DIR/"
 
-if security find-identity -v -p codesigning 2>/dev/null | grep -q "$SIGNING_IDENTITY_NAME"; then
+IDENTITIES="$(security find-identity -v -p codesigning 2>/dev/null)"
+APPLE_DEVELOPMENT="$(awk '/"Apple Development: /{print $2; exit}' <<<"$IDENTITIES")"
+if [[ -n "$APPLE_DEVELOPMENT" ]]; then
+    IDENTITY="$APPLE_DEVELOPMENT"
+elif grep -q "$SIGNING_IDENTITY_NAME" <<<"$IDENTITIES"; then
     IDENTITY="$SIGNING_IDENTITY_NAME"
+    echo "note: signing with '$SIGNING_IDENTITY_NAME'; the Keychain will ask again after each rebuild (see README: Permissions)" >&2
 else
     IDENTITY="-"
-    echo "note: no '$SIGNING_IDENTITY_NAME' certificate, signing ad-hoc (see README: Permissions)" >&2
+    echo "note: no signing certificate, signing ad-hoc (see README: Permissions)" >&2
 fi
 codesign --force --sign "$IDENTITY" "$BUNDLE/Contents/Frameworks/whisper.framework"
 codesign --force --sign "$IDENTITY" "$BUNDLE"

@@ -119,9 +119,16 @@ To remove everything, quit the app, delete it from Applications, delete the two 
 
 ## Permissions after rebuilding
 
-macOS ties the Microphone and Accessibility permissions to the app's signature. A self-built app is signed "ad hoc", so **every rebuild asks for the permissions again**, and the Keychain may ask once whether the app may read your keys.
+macOS ties the Microphone and Accessibility permissions, and your "Always Allow" answers to the Keychain, to the app's signature. A self-built app without a certificate is signed "ad hoc", so **every rebuild asks for all of them again**.
 
-If you rebuild often, create a stable signing certificate once: open **Keychain Access → Certificate Assistant → Create a Certificate…**, name it exactly `SpeechToText Dev`, choose **Code Signing** as the type, and create it. `build.sh` uses it automatically from then on.
+If you build the app yourself, sign it with a free Apple Development certificate and it keeps all of them across rebuilds:
+
+1. Open **Xcode → Settings → Accounts**, add your Apple ID if it is not there, and select your Personal Team.
+2. Click **Manage Certificates…**, then **+**, then **Apple Development**.
+
+`build.sh` uses that certificate automatically. After the first build with it, allow Microphone and Accessibility and click **Always Allow** for the Keychain once more; from then on nothing asks again.
+
+A self-made certificate (Keychain Access → Certificate Assistant, named `SpeechToText Dev`) also works for Microphone and Accessibility, but because it has no Apple team ID, the Keychain still asks after every rebuild.
 
 ## Let an AI agent set it up
 
