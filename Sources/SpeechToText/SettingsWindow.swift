@@ -30,6 +30,8 @@ final class SettingsWindowController {
 }
 
 struct SettingsView: View {
+    private static let releasesURL = URL(string: "https://github.com/JDrechsler/speech-to-text/releases")!
+
     @ObservedObject var state: AppState
     @ObservedObject private var models = WhisperModelStore.shared
     @ObservedObject private var credentials = CloudCredentials.shared
@@ -253,8 +255,20 @@ struct SettingsView: View {
                 Text("Recordings")
                 Text("Kept on this Mac for 24 hours, then deleted.")
             }
+            LabeledContent("Version") {
+                HStack(spacing: 12) {
+                    Text(Bundle.main.shortVersion).foregroundStyle(.secondary)
+                    Link("Release notes", destination: Self.releasesURL)
+                }
+            }
         } header: {
             Text("General")
         }
+    }
+}
+
+extension Bundle {
+    var shortVersion: String {
+        object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development build"
     }
 }
