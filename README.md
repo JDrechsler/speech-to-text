@@ -19,6 +19,7 @@ You choose where the speech is turned into text: **privately on your own Mac**, 
 | ☁️ **MAI-Transcribe-2** | Uploaded to **Microsoft Azure** | Your own Azure Speech key and endpoint |
 | ☁️ **Scribe v2** | Uploaded to **ElevenLabs** | Your own ElevenLabs API key |
 | ☁️ **Universal-3.5 Pro** | Uploaded to **AssemblyAI** | Your own AssemblyAI API key |
+| ☁️ **Step-Audio 3 ASR** | Uploaded to **StepFun** (servers in the US; StepFun may use recordings to improve its models) | Your own StepFun API key |
 
 How you can tell at a glance:
 
@@ -82,6 +83,7 @@ Open **Settings** and switch to **Cloud**. Pick a provider with the round button
 
 - **ElevenLabs Scribe v2:** create a key at [elevenlabs.io → Developers → API keys](https://elevenlabs.io/app/developers/api-keys).
 - **AssemblyAI Universal-3.5 Pro:** copy your key from the [AssemblyAI dashboard](https://www.assemblyai.com/dashboard/api-keys).
+- **StepFun Step-Audio 3 ASR:** create a key on the [StepFun platform](https://platform.stepfun.ai/interface-key). It understands English, Spanish, French, Chinese, Japanese and Korean, but not German, and it does not detect the language by itself: pick yours under **Spoken language** in its row.
 - **Microsoft MAI-Transcribe-2:** in the Azure portal, create a Speech resource in a region that offers MAI-Transcribe (see [Microsoft's MAI-Transcribe guide](https://learn.microsoft.com/azure/ai-services/speech-service/mai-transcribe)). Copy **Key 1** and the **endpoint** (`https://<resource-name>.cognitiveservices.azure.com`) into Settings.
 
 A cloud request that fails because of a network hiccup or a busy server is tried up to 3 times. A wrong key is reported right away.

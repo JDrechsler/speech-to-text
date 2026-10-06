@@ -27,11 +27,11 @@ Do these in order and report what you did. Prefer the in-app Settings window whe
    ```bash
    security add-generic-password -U -s SpeechToText -a ELEVENLABS_API_KEY -l "Speech to Text: ELEVENLABS_API_KEY" -T /Applications/SpeechToText.app -w
    ```
-   Keychain accounts: `AZURE_SPEECH_KEY`, `ELEVENLABS_API_KEY`, `ASSEMBLYAI_API_KEY` (service `SpeechToText`). The Azure endpoint is not secret and lives in the preferences: `defaults write com.jdrechsler.SpeechToText AZURE_SPEECH_ENDPOINT https://<resource>.cognitiveservices.azure.com`. Select the engine with `defaults write com.jdrechsler.SpeechToText enginePreference mai|scribe|assembly|whisper`. Restart the app after changing preferences from the command line.
+   Keychain accounts: `AZURE_SPEECH_KEY`, `ELEVENLABS_API_KEY`, `ASSEMBLYAI_API_KEY`, `STEPFUN_API_KEY` (service `SpeechToText`). The Azure endpoint is not secret and lives in the preferences: `defaults write com.jdrechsler.SpeechToText AZURE_SPEECH_ENDPOINT https://<resource>.cognitiveservices.azure.com`. Select the engine with `defaults write com.jdrechsler.SpeechToText enginePreference mai|scribe|assembly|stepfun|whisper`. Restart the app after changing preferences from the command line.
 
 4. **Permissions** cannot be granted from the terminal. Tell the user to allow Microphone on the first recording and Accessibility when asked (needed for auto-paste).
 
-Always tell the user which engine is active and whether it uploads audio. Whisper never does; the three cloud engines upload each recording to their provider.
+Always tell the user which engine is active and whether it uploads audio. Whisper never does; every cloud engine uploads each recording to its provider.
 
 ## Layout
 
@@ -40,7 +40,7 @@ Always tell the user which engine is active and whether it uploads audio. Whispe
 | `Engines.swift` | The engine list: names, provider, local vs cloud, privacy wording, required credentials, readiness |
 | `WhisperModels.swift` | Whisper model catalog, download/delete/select (`WhisperModelStore`), language option |
 | `LocalWhisper.swift` | In-process whisper.cpp: loads the model, transcribes a 16 kHz mono WAV |
-| `MAIClient.swift`, `ScribeClient.swift`, `AssemblyClient.swift` | One cloud provider each |
+| `MAIClient.swift`, `ScribeClient.swift`, `AssemblyClient.swift`, `StepFunClient.swift` | One cloud provider each |
 | `CloudRetry.swift`, `AppLog.swift` | Retry policy for cloud calls and the error log |
 | `CloudCredentials.swift`, `Keychain.swift` | Where keys live (Keychain) and the non-secret endpoint (UserDefaults) |
 | `AppState.swift` | Recording state machine: recorder → overlay → engine → paste and history |
@@ -68,5 +68,6 @@ swift build                 # must finish with no warnings
 - **Audio is never lost.** The recorder writes to disk while recording; never move transcription before the file is closed.
 - **The Whisper prompt is fake preceding transcript, not an instruction.** Whisper continues whatever text the prompt looks like. A glossary-style prompt ("Glossary: Anna, Ben, …") reads like a meeting transcript's cast list and makes Whisper invent speaker labels. Keep the first-person dictation framing in `firstPersonVocabularyPrompt`.
 - **MAI-Transcribe-2 rejects more than 50 phrases** with HTTP 400, so `MAIClient` caps the dictionary at 50.
+- **StepFun's Step-Audio 3 ASR is not OpenAI-compatible.** It takes base64 audio in JSON on `/v1/audio/asr/sse` and answers with server-sent events; the transcript is the `text` of the `transcript.text.done` event. It has no language detection (it assumes English) and no German. Its `hotwords` vocabulary field is only documented for the China endpoint, so the dictionary is not sent.
 - **Free the whisper context before exit.** ggml's Metal backend asserts at process exit if a model is still loaded, which shows up as a crash on Quit. `applicationWillTerminate` calls `LocalWhisper.shared.releaseBeforeExit()`.
 - **Nothing personal in the repo.** The dictionary, recordings, keys and models live in the user's Library folders, never in the repository.

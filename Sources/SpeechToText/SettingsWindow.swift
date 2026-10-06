@@ -34,6 +34,7 @@ struct SettingsView: View {
     @ObservedObject private var models = WhisperModelStore.shared
     @ObservedObject private var credentials = CloudCredentials.shared
     @AppStorage(WhisperLanguage.storageKey) private var whisperLanguage = "auto"
+    @AppStorage(StepFunClient.languageKey) private var stepFunLanguage = "en"
     @State private var expanded: Set<EnginePreference> = []
     @State private var modelPendingDeletion: WhisperModel?
     @State private var dictionaryTermCount = PersonalDictionary.terms().count
@@ -201,6 +202,15 @@ struct SettingsView: View {
                 .fixedSize(horizontal: false, vertical: true)
             ForEach(engine.credentialFields) { field in
                 CredentialRow(field: field, credentials: credentials)
+            }
+            if engine == .stepfun {
+                Picker("Spoken language", selection: $stepFunLanguage) {
+                    ForEach(StepFunClient.languages, id: \.code) { option in
+                        Text(option.name).tag(option.code)
+                    }
+                }
+                .controlSize(.small)
+                .fixedSize()
             }
             HStack(spacing: 16) {
                 if let url = engine.keyHelpURL {

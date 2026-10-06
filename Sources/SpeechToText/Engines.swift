@@ -1,7 +1,7 @@
 import Foundation
 
 enum EnginePreference: String, CaseIterable, Identifiable {
-    case whisper, mai, scribe, assembly
+    case whisper, mai, scribe, assembly, stepfun
 
     static let local: [EnginePreference] = allCases.filter(\.isLocal)
     static let cloud: [EnginePreference] = allCases.filter { !$0.isLocal }
@@ -33,6 +33,7 @@ enum EnginePreference: String, CaseIterable, Identifiable {
         case .mai: return "MAI-Transcribe-2"
         case .scribe: return "Scribe v2"
         case .assembly: return "Universal-3.5 Pro"
+        case .stepfun: return "Step-Audio 3 ASR"
         }
     }
 
@@ -42,6 +43,7 @@ enum EnginePreference: String, CaseIterable, Identifiable {
         case .mai: return "Microsoft Azure"
         case .scribe: return "ElevenLabs"
         case .assembly: return "AssemblyAI"
+        case .stepfun: return "StepFun"
         }
     }
 
@@ -51,6 +53,7 @@ enum EnginePreference: String, CaseIterable, Identifiable {
         case .mai: return "MAI"
         case .scribe: return "Scribe"
         case .assembly: return "AssemblyAI"
+        case .stepfun: return "StepFun"
         }
     }
 
@@ -64,6 +67,8 @@ enum EnginePreference: String, CaseIterable, Identifiable {
             return "The fastest cloud engine in this app. Mixed-language recordings can lose the minority language."
         case .assembly:
             return "Verbatim and strong with several languages in one recording. A few seconds slower."
+        case .stepfun:
+            return "StepFun's newest speech model. English, Spanish, French, Chinese, Japanese and Korean, no German. StepFun may use recordings to improve its models."
         }
     }
 
@@ -91,6 +96,7 @@ enum EnginePreference: String, CaseIterable, Identifiable {
         case .mai: return "mai-transcribe-2"
         case .scribe: return "scribe-v2"
         case .assembly: return "assemblyai-universal-3.5-pro"
+        case .stepfun: return "stepfun-\(StepFunClient.model)"
         }
     }
 
@@ -105,6 +111,7 @@ enum EnginePreference: String, CaseIterable, Identifiable {
         case .mai: return [.azureSpeechKey, .azureSpeechEndpoint]
         case .scribe: return [.elevenLabsKey]
         case .assembly: return [.assemblyKey]
+        case .stepfun: return [.stepFunKey]
         }
     }
 
@@ -114,6 +121,7 @@ enum EnginePreference: String, CaseIterable, Identifiable {
         case .mai: return URL(string: "https://learn.microsoft.com/azure/ai-services/speech-service/mai-transcribe")
         case .scribe: return URL(string: "https://elevenlabs.io/app/developers/api-keys")
         case .assembly: return URL(string: "https://www.assemblyai.com/dashboard/api-keys")
+        case .stepfun: return URL(string: "https://platform.stepfun.ai/interface-key")
         }
     }
 
@@ -126,6 +134,7 @@ enum EnginePreference: String, CaseIterable, Identifiable {
                     "https://learn.microsoft.com/azure/foundry/responsible-ai/speech-service/speech-to-text/data-privacy-security")
         case .scribe: return URL(string: "https://elevenlabs.io/privacy-policy")
         case .assembly: return URL(string: "https://www.assemblyai.com/legal/privacy-policy")
+        case .stepfun: return URL(string: "https://platform.stepfun.ai/docs/en/agreement/userprivacy")
         }
     }
 

@@ -16,6 +16,8 @@ struct CredentialField: Identifiable, Hashable {
         id: "ELEVENLABS_API_KEY", label: "API key", placeholder: "ElevenLabs API key", isSecret: true)
     static let assemblyKey = CredentialField(
         id: "ASSEMBLYAI_API_KEY", label: "API key", placeholder: "AssemblyAI API key", isSecret: true)
+    static let stepFunKey = CredentialField(
+        id: "STEPFUN_API_KEY", label: "API key", placeholder: "StepFun API key", isSecret: true)
 }
 
 @MainActor

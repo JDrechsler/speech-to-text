@@ -51,6 +51,7 @@ enum CloudRetry {
         case MAIError.serverError(let status): return isTransientStatus(status)
         case ScribeError.serverError(let status): return isTransientStatus(status)
         case AssemblyError.serverError: return true
+        case StepFunError.serverError(let status): return isTransientStatus(status)
         default: return false
         }
     }
@@ -69,7 +70,8 @@ enum CloudRetry {
     private static func errorCode(_ error: Error) -> String {
         if let urlError = error as? URLError { return "URLError\(urlError.code.rawValue)" }
         switch error {
-        case MAIError.serverError(let status), ScribeError.serverError(let status):
+        case MAIError.serverError(let status), ScribeError.serverError(let status),
+            StepFunError.serverError(let status):
             return "HTTP\(status)"
         default: return String(describing: type(of: error))
         }

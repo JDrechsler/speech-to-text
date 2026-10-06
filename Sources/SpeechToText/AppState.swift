@@ -305,6 +305,7 @@ final class AppState: ObservableObject {
         case .mai: cloudCall = { try await MAIClient.transcribe(fileURL: url) }
         case .scribe: cloudCall = { try await ScribeClient.transcribe(fileURL: url) }
         case .assembly: cloudCall = { try await AssemblyClient.transcribe(fileURL: url) }
+        case .stepfun: cloudCall = { try await StepFunClient.transcribe(fileURL: url) }
         }
         return try await CloudRetry.run(
             engine: engine, recordingSeconds: recordingSeconds, onAttempt: onAttempt, cloudCall)
