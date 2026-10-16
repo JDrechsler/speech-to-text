@@ -1,9 +1,13 @@
-.build/
-dist/
 .DS_Store
 .env
+.env.*
+!.env.example
 .claude/worktrees/
-vendor/mediaremote-adapter/build/
+node_modules
+/build
+/.svelte-kit
+/package
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
 dictionary.txt
-logs/
 *.bin

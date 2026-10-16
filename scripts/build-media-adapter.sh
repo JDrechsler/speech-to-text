@@ -3,7 +3,7 @@ set -eu
 [ "$(uname)" = "Darwin" ] || exit 0
 cd "$(dirname "$0")/.."
 
-ADAPTER_DIR="../vendor/mediaremote-adapter"
+ADAPTER_DIR="vendor/mediaremote-adapter"
 OUT_DIR="src-tauri/resources/mediaremote-adapter"
 FRAMEWORK="$OUT_DIR/MediaRemoteAdapter.framework"
 
