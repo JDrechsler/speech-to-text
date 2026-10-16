@@ -4303,6 +4303,7 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-single-instance",
  "tokio",
+ "tray-icon",
  "uuid",
  "whisper-rs",
  "windows 0.61.3",
