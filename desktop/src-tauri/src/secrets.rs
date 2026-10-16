@@ -16,6 +16,8 @@ use crate::paths;
 const FORMAT: &str = "speech-to-text-sealed-v1";
 const KEY_INFO: &[u8] = b"com.jdrechsler.SpeechToText api keys";
 const NONCE_LENGTH: usize = 12;
+#[cfg(target_os = "macos")]
+const MAC_APP_KEYCHAIN_SERVICE: &str = "SpeechToText";
 
 #[derive(Serialize, Deserialize)]
 struct SealedFile {
@@ -44,6 +46,22 @@ pub fn delete(name: &str) -> Result<(), String> {
         return Ok(());
     }
     write(&all)
+}
+
+#[cfg(target_os = "macos")]
+pub fn copy_from_mac_app_keychain<'a>(names: impl IntoIterator<Item = &'a str>) {
+    for name in names {
+        if contains(name) {
+            continue;
+        }
+        let Ok(bytes) = security_framework::passwords::get_generic_password(MAC_APP_KEYCHAIN_SERVICE, name) else {
+            continue;
+        };
+        let value = String::from_utf8_lossy(&bytes).trim().to_string();
+        if !value.is_empty() {
+            let _ = save(name, &value);
+        }
+    }
 }
 
 pub fn sealed(values: &BTreeMap<String, String>, machine_id: &str) -> Option<Vec<u8>> {

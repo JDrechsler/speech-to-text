@@ -79,6 +79,28 @@ fn start_hourly_cleanup() {
     });
 }
 
+fn finish_launch(app: &AppHandle) {
+    let state = state::shared(app);
+    if !state.settings().keychain_imported {
+        import_mac_app_keys();
+        state.update_settings(|settings| settings.keychain_imported = true);
+        tray::refresh(app);
+    }
+    if state::engine_setup_hint(state.settings().engine, &state).is_some() {
+        let handle = app.clone();
+        let _ = app.run_on_main_thread(move || windows::open_settings(&handle));
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn import_mac_app_keys() {
+    let secret_fields: Vec<_> = engines::all_credential_fields().filter(|field| field.is_secret).collect();
+    secrets::copy_from_mac_app_keychain(secret_fields.iter().map(|field| field.id));
+}
+
+#[cfg(not(target_os = "macos"))]
+fn import_mac_app_keys() {}
+
 pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, args, _| on_command_line(app, &args)))
@@ -96,10 +118,8 @@ pub fn run() {
             windows::create_overlay(app.handle())?;
             register_shortcuts(app.handle());
             start_hourly_cleanup();
-            let state = state::shared(app.handle());
-            if state::engine_setup_hint(state.settings().engine, &state).is_some() {
-                windows::open_settings(app.handle());
-            }
+            let handle = app.handle().clone();
+            std::thread::spawn(move || finish_launch(&handle));
             Ok(())
         })
         .invoke_handler(commands::handler())

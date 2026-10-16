@@ -16,6 +16,7 @@ pub struct Settings {
     pub azure_endpoint: Option<String>,
     pub microphone: Option<String>,
     pub pause_media: bool,
+    pub keychain_imported: bool,
 }
 
 impl Default for Settings {
@@ -29,6 +30,7 @@ impl Default for Settings {
             azure_endpoint: None,
             microphone: None,
             pause_media: true,
+            keychain_imported: false,
         }
     }
 }
@@ -82,6 +84,7 @@ fn imported_from_mac_app() -> Option<Settings> {
             .get("pauseMediaEnabled")
             .and_then(|value| value.as_boolean())
             .unwrap_or(defaults.pause_media),
+        keychain_imported: false,
     })
 }
 
