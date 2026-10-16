@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "SpeechToText Tauri",
-  "version": "2.0.0-alpha.1",
-  "identifier": "com.jdrechsler.SpeechToText.desktop",
+  "productName": "SpeechToText",
+  "version": "2.0.0",
+  "identifier": "com.jdrechsler.SpeechToText",
   "build": {
     "beforeDevCommand": "sh scripts/build-media-adapter.sh && bun run dev",
     "devUrl": "http://localhost:1420",
