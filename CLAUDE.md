@@ -45,7 +45,7 @@ Always tell the user which engine is active and whether it uploads audio. Whispe
 | `src-tauri/src/tray.rs`, `windows.rs`, `login_item.rs` | Menu bar menu, windows, Launch at Login |
 | `src-tauri/src/commands/` | Everything the front end can call |
 | `src/routes/settings`, `history`, `overlay` | The three windows |
-| `vendor/mediaremote-adapter` | Built by `scripts/build-media-adapter.sh` before every build, for pausing media on macOS |
+| `vendor/mediaremote-adapter` | Built by `src-tauri/build.rs` (through `scripts/build-media-adapter.sh`) on every macOS build, for pausing media |
 
 ## Verify a change
 
