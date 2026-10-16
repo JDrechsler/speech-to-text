@@ -11,7 +11,13 @@
   } from "$lib/api";
   import { engineMenuTitle } from "$lib/settings/profiles";
 
-  const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+  const timeFormat = new Intl.DateTimeFormat(undefined, { timeStyle: "short" });
+
+  function recordedAt(iso: string) {
+    const date = new Date(iso);
+    const time = timeFormat.format(date);
+    return date.toDateString() === new Date().toDateString() ? time : `Yesterday, ${time}`;
+  }
 
   let {
     entry,
@@ -59,7 +65,7 @@
     <button class="plain play" title={isPlaying ? "Stop" : "Play recording"} onclick={onplay}>
       {isPlaying ? "■" : "▶"}
     </button>
-    <span class="date">{dateFormat.format(new Date(entry.createdAt))}</span>
+    <span class="date">{recordedAt(entry.createdAt)}</span>
     {#if entry.duration > 0}
       <span class="note">{duration}</span>
     {/if}
@@ -139,8 +145,10 @@
   }
   .date {
     font-weight: 500;
+    white-space: nowrap;
   }
   .chip {
+    white-space: nowrap;
     font-size: 10px;
     padding: 1px 6px;
     border-radius: 999px;
