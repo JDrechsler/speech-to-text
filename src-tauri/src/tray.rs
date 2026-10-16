@@ -31,7 +31,7 @@ const SHORTCUT_LABEL: &str = "Alt+Space";
 enum Entry {
     Item { id: &'static str, title: String, enabled: bool },
     Check { id: String, title: String, checked: bool },
-    Header(String),
+    Header { title: String, local: bool },
     Note(String),
     Separator,
     Submenu { title: String, entries: Vec<Entry> },
@@ -52,7 +52,7 @@ impl Entry {
             Entry::Check { id, title, checked } => {
                 Box::new(CheckMenuItem::with_id(id.as_str(), title, true, *checked, None))
             }
-            Entry::Header(title) => Box::new(PredefinedMenuItem::section_header(title)),
+            Entry::Header { title, .. } => Box::new(PredefinedMenuItem::section_header(title)),
             Entry::Note(title) => Box::new(MenuItem::new(title, false, None)),
             Entry::Separator => Box::new(PredefinedMenuItem::separator()),
             Entry::Submenu { title, entries } => {
@@ -105,6 +105,8 @@ fn rebuild_menu(app: &AppHandle) {
         for entry in &entries {
             let _ = menu.append(entry.rendered().as_ref());
         }
+        #[cfg(target_os = "macos")]
+        color_headers(&menu, &entries);
         inner.set_menu(Some(Box::new(menu)));
     });
 }
@@ -154,7 +156,7 @@ fn engine_menu(state: &Shared) -> Entry {
     let groups = [(format!("On {THIS_DEVICE} · private, offline"), true), ("Cloud · uploads your audio".into(), false)];
     let mut entries = Vec::new();
     for (header, local) in groups {
-        entries.push(Entry::Header(header));
+        entries.push(Entry::Header { title: header, local });
         for engine in Engine::ALL.into_iter().filter(|engine| engine.is_local() == local) {
             let ready = state::engine_setup_hint(engine, state).is_none();
             let title =
@@ -192,6 +194,50 @@ fn microphone_menu(settings: &Settings) -> Entry {
         entries.push(Entry::Note("Preferred microphone not connected, using system default".into()));
     }
     Entry::Submenu { title: format!("Microphone: {}", in_use.as_deref().unwrap_or("none")), entries }
+}
+
+#[cfg(target_os = "macos")]
+fn color_headers(menu: &Menu, entries: &[Entry]) {
+    use objc2::AllocAnyThread;
+    use objc2::runtime::AnyObject;
+    use objc2_app_kit::{NSColor, NSFont, NSFontAttributeName, NSForegroundColorAttributeName, NSMenu};
+    use objc2_foundation::{NSAttributedString, NSDictionary, NSString};
+    use tray_icon::menu::ContextMenu;
+
+    fn headers(entries: &[Entry]) -> Vec<(&str, bool)> {
+        entries
+            .iter()
+            .flat_map(|entry| match entry {
+                Entry::Header { title, local } => vec![(title.as_str(), *local)],
+                Entry::Submenu { entries, .. } => headers(entries),
+                _ => Vec::new(),
+            })
+            .collect()
+    }
+
+    let headers = headers(entries);
+    let root = unsafe { &*(menu.ns_menu() as *const NSMenu) };
+    let font = NSFont::boldSystemFontOfSize(NSFont::smallSystemFontSize());
+    for submenu in root.itemArray().iter().filter_map(|item| item.submenu()) {
+        for item in submenu.itemArray().iter() {
+            let title = item.title().to_string();
+            let Some(&(_, local)) = headers.iter().find(|(header, _)| *header == title) else {
+                continue;
+            };
+            let color = if local { NSColor::systemGreenColor() } else { NSColor::systemOrangeColor() };
+            let keys = unsafe { [NSForegroundColorAttributeName, NSFontAttributeName] };
+            let values: [&AnyObject; 2] = [&color, &font];
+            let attributes = NSDictionary::from_slices(&keys, &values);
+            let text = unsafe {
+                NSAttributedString::initWithString_attributes(
+                    NSAttributedString::alloc(),
+                    &NSString::from_str(&title),
+                    Some(&attributes),
+                )
+            };
+            item.setAttributedTitle(Some(&text));
+        }
+    }
 }
 
 fn handle_menu_event(app: &AppHandle, event: MenuEvent) {

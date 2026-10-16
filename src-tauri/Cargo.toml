@@ -44,8 +44,8 @@ uuid = { version = "1", features = ["v4"] }
 [target.'cfg(target_os = "macos")'.dependencies]
 whisper-rs = { version = "0.16", features = ["metal"] }
 objc2 = "0.6"
-objc2-foundation = { version = "0.3", features = ["NSString", "NSError"] }
-objc2-app-kit = { version = "0.3", features = ["NSWorkspace", "NSRunningApplication", "NSApplication", "NSWindow", "NSResponder"] }
+objc2-foundation = { version = "0.3", features = ["NSString", "NSError", "NSArray", "NSDictionary", "NSAttributedString", "NSEnumerator"] }
+objc2-app-kit = { version = "0.3", features = ["NSWorkspace", "NSRunningApplication", "NSApplication", "NSWindow", "NSResponder", "NSMenu", "NSMenuItem", "NSColor", "NSFont", "NSAttributedString"] }
 objc2-av-foundation = { version = "0.3", default-features = false, features = ["std", "AVCaptureDevice", "AVMediaFormat", "block2"] }
 block2 = "0.6"
 coreaudio-sys = { version = "0.2", default-features = false, features = ["core_audio"] }
