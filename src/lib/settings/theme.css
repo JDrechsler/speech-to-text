@@ -1,0 +1,260 @@
+:root {
+  --bg: #ececec;
+  --group: #ffffff;
+  --group-border: rgba(0, 0, 0, 0.08);
+  --separator: rgba(0, 0, 0, 0.08);
+  --text: #1d1d1f;
+  --secondary: #6e6e73;
+  --tertiary: #aeaeb2;
+  --accent: #007aff;
+  --accent-soft: rgba(0, 122, 255, 0.14);
+  --local: #1f8a3b;
+  --cloud: #b45309;
+  --danger: #d70015;
+  --warning: #c75c00;
+  --control: #ffffff;
+  --control-border: rgba(0, 0, 0, 0.16);
+  --control-hover: #f5f5f7;
+  --field: #ffffff;
+  --segment-bg: rgba(0, 0, 0, 0.06);
+  --segment-on: #ffffff;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1e1e1e;
+    --group: #2a2a2a;
+    --group-border: rgba(255, 255, 255, 0.06);
+    --separator: rgba(255, 255, 255, 0.08);
+    --text: #f5f5f7;
+    --secondary: #98989d;
+    --tertiary: #636366;
+    --accent: #0a84ff;
+    --accent-soft: rgba(10, 132, 255, 0.22);
+    --local: #30d158;
+    --cloud: #ff9f0a;
+    --danger: #ff453a;
+    --warning: #ff9f0a;
+    --control: #3a3a3c;
+    --control-border: rgba(255, 255, 255, 0.1);
+    --control-hover: #48484a;
+    --field: #1c1c1e;
+    --segment-bg: rgba(255, 255, 255, 0.08);
+    --segment-on: #636366;
+    color-scheme: dark;
+  }
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Ubuntu, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+}
+
+main {
+  box-sizing: border-box;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 20px 20px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+h2 {
+  margin: 0 0 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--secondary);
+}
+
+.section > .note {
+  margin: 6px 10px 0;
+}
+
+.group {
+  background: var(--group);
+  border: 1px solid var(--group-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+  padding: 10px 12px;
+}
+
+.row + .row,
+.block + .row,
+.row + .block,
+.block + .block {
+  border-top: 1px solid var(--separator);
+}
+
+.block {
+  padding: 10px 12px;
+}
+
+.row .label {
+  flex: 1;
+  min-width: 0;
+}
+
+.label .sub {
+  display: block;
+  font-size: 11px;
+  color: var(--secondary);
+}
+
+.note {
+  font-size: 11px;
+  color: var(--secondary);
+}
+
+.local-text {
+  color: var(--local);
+}
+
+.cloud-text {
+  color: var(--cloud);
+}
+
+.warning-text {
+  color: var(--warning);
+}
+
+.error-text {
+  color: var(--danger);
+  font-size: 11px;
+}
+
+button,
+select,
+input,
+textarea {
+  font: inherit;
+  color: var(--text);
+}
+
+button {
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--control-border);
+  background: var(--control);
+  white-space: nowrap;
+}
+
+button:hover:not(:disabled) {
+  background: var(--control-hover);
+}
+
+button:disabled {
+  opacity: 0.45;
+}
+
+button.link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+}
+
+button.link:hover:not(:disabled) {
+  background: none;
+  text-decoration: underline;
+}
+
+button.danger {
+  color: var(--danger);
+}
+
+button.plain {
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+button.plain:hover:not(:disabled) {
+  background: none;
+}
+
+select {
+  padding: 3px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--control-border);
+  background: var(--control);
+  max-width: 100%;
+}
+
+input[type="text"],
+input[type="password"],
+textarea {
+  box-sizing: border-box;
+  padding: 4px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--control-border);
+  background: var(--field);
+  min-width: 0;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+button:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 0;
+  border-color: var(--accent);
+}
+
+.chevron {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  color: var(--tertiary);
+  transition: transform 150ms ease;
+}
+
+.chevron.open {
+  transform: rotate(90deg);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-row > .field-label {
+  width: 64px;
+  flex: none;
+  color: var(--secondary);
+}
+
+.field-row > input {
+  flex: 1;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+}
