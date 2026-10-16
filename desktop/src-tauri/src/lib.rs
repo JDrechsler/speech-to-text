@@ -7,6 +7,7 @@ mod dictionary;
 mod engines;
 mod frontmost;
 mod history;
+mod login_item;
 mod media;
 mod microphone;
 mod models;
@@ -25,7 +26,6 @@ mod windows;
 use std::time::Duration;
 
 use tauri::{AppHandle, Manager, RunEvent};
-use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutEvent, ShortcutState};
 
 const CLEANUP_INTERVAL: Duration = Duration::from_secs(60 * 60);
@@ -102,12 +102,14 @@ fn import_mac_app_keys() {
 fn import_mac_app_keys() {}
 
 pub fn run() {
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, args, _| on_command_line(app, &args)))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, None))
-        .plugin(tauri_plugin_global_shortcut::Builder::new().with_handler(on_shortcut).build())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().with_handler(on_shortcut).build());
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.plugin(tauri_plugin_autostart::Builder::new().build());
+    let app = builder
         .setup(|app| {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);

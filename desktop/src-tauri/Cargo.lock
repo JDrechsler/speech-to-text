@@ -4291,7 +4291,7 @@ dependencies = [
 
 [[package]]
 name = "speech-to-text"
-version = "2.0.0-alpha.1"
+version = "2.0.0"
 dependencies = [
  "aes-gcm",
  "arboard",
@@ -4311,6 +4311,7 @@ dependencies = [
  "objc2-app-kit",
  "objc2-av-foundation",
  "objc2-foundation",
+ "objc2-service-management",
  "plist",
  "rand 0.8.8",
  "reqwest 0.12.28",

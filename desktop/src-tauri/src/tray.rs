@@ -3,12 +3,12 @@ use tauri::image::Image;
 use tauri::menu::MenuEvent;
 use tauri::tray::{TrayIconBuilder, TrayIconEvent};
 use tray_icon::menu::{CheckMenuItem, IsMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
-use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_opener::OpenerExt;
 
 use crate::audio;
 use crate::dictionary;
 use crate::engines::{Engine, THIS_DEVICE};
+use crate::login_item;
 use crate::paste;
 use crate::paths;
 use crate::session;
@@ -137,7 +137,7 @@ fn menu_entries(app: &AppHandle) -> Vec<Entry> {
     if !paste::accessibility::is_trusted(false) {
         entries.push(Entry::item("accessibility", "Grant Accessibility (needed for auto-paste)…"));
     }
-    let launches_at_login = app.autolaunch().is_enabled().unwrap_or(false);
+    let launches_at_login = login_item::is_enabled(app);
     entries.extend([
         Entry::check("launch-at-login", "Launch at Login", launches_at_login),
         Entry::Separator,
@@ -222,8 +222,7 @@ fn handle_menu_event(app: &AppHandle, event: MenuEvent) {
                 paste::accessibility::is_trusted(true);
             }
             "launch-at-login" => {
-                let launcher = app.autolaunch();
-                let _ = if launcher.is_enabled().unwrap_or(false) { launcher.disable() } else { launcher.enable() };
+                let _ = login_item::set_enabled(app, !login_item::is_enabled(app));
             }
             "settings" => windows::open_settings(app),
             "quit" => app.exit(0),

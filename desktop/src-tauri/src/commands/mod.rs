@@ -3,13 +3,13 @@ mod rewrite;
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
-use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_opener::OpenerExt;
 
 use crate::audio::{self, InputDevice};
 use crate::dictionary;
 use crate::engines::{self, Engine, EngineInfo};
 use crate::models::{self, WhisperModel};
+use crate::login_item;
 use crate::paste;
 use crate::paths;
 use crate::secrets;
@@ -287,15 +287,13 @@ fn general_status(app: AppHandle) -> GeneralStatus {
         platform: std::env::consts::OS,
         dictionary_terms: dictionary::terms().len(),
         accessibility_allowed: paste::accessibility::is_trusted(false),
-        launch_at_login: app.autolaunch().is_enabled().unwrap_or(false),
+        launch_at_login: login_item::is_enabled(&app),
     }
 }
 
 #[tauri::command]
 fn set_launch_at_login(app: AppHandle, enabled: bool) -> Result<(), String> {
-    let launcher = app.autolaunch();
-    let result = if enabled { launcher.enable() } else { launcher.disable() };
-    result.map_err(|error| error.to_string())
+    login_item::set_enabled(&app, enabled)
 }
 
 #[tauri::command]
