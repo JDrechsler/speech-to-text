@@ -6,6 +6,20 @@ Press **⌥ Space** (Alt+Space on Windows and Linux) anywhere, speak, press it a
 
 You choose where the speech is turned into text: **privately on your own computer**, or with a **cloud service** you bring your own key for. The app always shows which one is active.
 
+<p align="center">
+  <img src="docs/overlay.png" width="560" alt="The recording overlay while speaking: a live waveform, Terminal · Prompt for AI, and the badges On this Mac and Text to api.anthropic.com">
+</p>
+
+## What's new in 2.0
+
+- **Windows and Linux.** The app was rebuilt with [Tauri](https://tauri.app), so the same app now runs on macOS, Windows and Linux.
+- **Rewrite before pasting.** Optionally let a language model clean up the transcript, turn it into an email, a chat message or a prompt for an AI, or follow your own instructions. Use a model on your own computer (Ollama, LM Studio) or your own key for Claude, OpenAI, Gemini and more.
+- **Per-app profiles.** The app in front picks the engine, the rewrite style and the model: a casual chat message in Slack, a clear prompt in your terminal, a proper email in Mail. Available on macOS and Windows.
+- **Light on memory.** Whisper loads when you press the hotkey and unloads after 5 minutes without dictation. Version 1 kept Large v3 Turbo loaded, about 2 GB.
+- **No more Keychain prompts.** API keys live in an encrypted file that only opens on your computer.
+
+Coming from version 1? See [Upgrading from version 1](#upgrading-from-version-1-the-swift-mac-app).
+
 ## Where does my voice go?
 
 | Engine | Where your audio goes | What you need |
@@ -21,6 +35,11 @@ How you can tell at a glance:
 - Settings starts with one switch: **On this Mac** (or **On this computer**) and **Cloud**. Cloud providers only appear once you pick Cloud, and each one is marked **Uploads audio** with the company's name.
 - While you record, the overlay shows a badge: **🔒 On this Mac** or **☁️ Cloud · ElevenLabs** (or whichever provider you picked).
 - The menu bar's Engine menu is split the same way.
+
+<p>
+  <img src="docs/settings-on-this-mac.png" width="420" alt="Settings set to On this Mac: private and offline, Whisper Large v3 Turbo ready, a local Ollama model for rewriting and three app profiles">
+  <img src="docs/settings-cloud.png" width="420" alt="Settings set to Cloud: each provider is marked Uploads audio and asks for your own API key">
+</p>
 
 Everything else stays on your computer too:
 
@@ -98,7 +117,11 @@ Under **Rewrite** in Settings, the transcript can be tidied up by a language mod
 
 You add the model yourself: Claude, OpenAI, Gemini, Mistral, Groq, OpenRouter, any OpenAI-compatible server, or a model running on your own computer with Ollama or LM Studio. Only the text is sent, never the audio. A model on your own computer keeps the text there too, and Settings says which one applies.
 
-**App profiles** choose the engine, rewrite style and model per app, for example a casual chat style in Slack and a shell command in your terminal. Available on macOS and Windows.
+**App profiles** choose the engine, rewrite style and model per app, for example a casual chat message in Slack and a clear prompt in your terminal. The app in front when you press the hotkey picks its profile, and each profile says in plain words where its audio and text go. Available on macOS and Windows.
+
+<p align="center">
+  <img src="docs/app-profiles.png" width="560" alt="Per-app profiles for Mail, Slack and Terminal; Terminal uses Whisper on this Mac and Claude to turn dictation into a prompt">
+</p>
 
 ## Everyday use
 
@@ -110,6 +133,10 @@ You add the model yourself: Claude, OpenAI, Gemini, Mistral, Groq, OpenRouter, a
 | Choose a microphone | Menu bar icon → Microphone |
 | Pause music and videos while you talk (macOS) | Menu bar icon → Pause Media While Recording |
 | Start with your computer | Menu bar icon → Launch at Login |
+
+<p align="center">
+  <img src="docs/history.png" width="560" alt="Recording History: replay, re-transcribe, copy or delete the last 24 hours, with the rewritten text and what was heard">
+</p>
 
 On Linux, the hotkey works on X11. On Wayland, bind a shortcut in your desktop settings to `speech-to-text --toggle` (and `speech-to-text --cancel`).
 
