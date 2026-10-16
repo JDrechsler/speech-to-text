@@ -114,7 +114,7 @@ pub fn engine_badge(engine: Engine) -> Badge {
     }
 }
 
-pub fn choose_engine(state: &AppState, engine: Engine) -> Settings {
+pub fn choose_engine(state: &Shared, engine: Engine) -> Settings {
     let settings = state.update_settings(|settings| {
         settings.engine = engine;
         if !engine.is_local() {
@@ -122,7 +122,8 @@ pub fn choose_engine(state: &AppState, engine: Engine) -> Settings {
         }
     });
     if !engine.is_local() {
-        state.whisper.unload();
+        let state = state.clone();
+        std::thread::spawn(move || state.whisper.unload());
     }
     settings
 }

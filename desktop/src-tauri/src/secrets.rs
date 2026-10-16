@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::fs;
+use std::sync::OnceLock;
 
 use aes_gcm::aead::{Aead, KeyInit};
 use aes_gcm::{Aes256Gcm, Nonce};
@@ -82,15 +83,15 @@ pub fn opened(data: &[u8], machine_id: &str) -> Option<BTreeMap<String, String>>
 }
 
 fn load_all() -> BTreeMap<String, String> {
-    let (Some(machine_id), Ok(data)) = (machine_id(), fs::read(paths::keys_file())) else {
+    let Ok(data) = fs::read(paths::keys_file()) else {
         return BTreeMap::new();
     };
-    opened(&data, &machine_id).unwrap_or_default()
+    machine_id().and_then(|machine_id| opened(&data, machine_id)).unwrap_or_default()
 }
 
 fn write(values: &BTreeMap<String, String>) -> Result<(), String> {
     let machine_id = machine_id().ok_or("Could not read this computer's ID")?;
-    let data = sealed(values, &machine_id).ok_or("Could not encrypt the keys")?;
+    let data = sealed(values, machine_id).ok_or("Could not encrypt the keys")?;
     let path = paths::keys_file();
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|error| error.to_string())?;
@@ -118,8 +119,11 @@ fn derived_key(machine_id: &str, salt: &[u8]) -> [u8; 32] {
     key
 }
 
-fn machine_id() -> Option<String> {
-    machine_uid::get().ok().filter(|id| !id.is_empty())
+fn machine_id() -> Option<&'static str> {
+    static MACHINE_ID: OnceLock<Option<String>> = OnceLock::new();
+    MACHINE_ID
+        .get_or_init(|| machine_uid::get().ok().filter(|id| !id.is_empty()))
+        .as_deref()
 }
 
 #[cfg(test)]
