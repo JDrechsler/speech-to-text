@@ -163,7 +163,7 @@ export interface RewriteTargetInfo {
   isReady: boolean;
   setupHint: string | null;
   hasKey: boolean;
-  keyPlaceholder: string | null;
+  keyPlaceholder: string;
 }
 
 export interface AppIdentity {
@@ -171,7 +171,6 @@ export interface AppIdentity {
   name: string;
 }
 
-export const APPLE_REWRITER_ID = "apple";
 export const modelKeyId = (modelId: string) => `MODEL_KEY_${modelId}`;
 
 export const STEPFUN_LANGUAGES: Language[] = [

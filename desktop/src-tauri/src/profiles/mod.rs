@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::engines::Engine;
 use crate::paths;
-use crate::rewrite::{ModelPreset, RewriteModel, RewriteTarget, model_key_id};
+use crate::rewrite::{ModelPreset, RewriteModel, model_key_id};
 use crate::secrets;
 
 #[cfg(test)]
@@ -110,7 +110,7 @@ impl AppProfile {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct ProfileSettings {
     pub default_style: RewriteStyle,
@@ -121,36 +121,15 @@ pub struct ProfileSettings {
     pub models: Vec<RewriteModel>,
 }
 
-impl Default for ProfileSettings {
-    fn default() -> Self {
-        ProfileSettings {
-            default_style: RewriteStyle::Off,
-            default_rewriter_id: RewriteTarget::APPLE_ID.into(),
-            default_custom_instructions: String::new(),
-            apps: Vec::new(),
-            models: Vec::new(),
-        }
-    }
-}
-
 impl ProfileSettings {
-    pub fn rewrite_targets(&self) -> Vec<RewriteTarget> {
-        let models = self.models.iter().cloned().map(RewriteTarget::Model);
-        std::iter::once(RewriteTarget::Apple).chain(models).collect()
+    pub fn default_rewriter(&self) -> Option<&RewriteModel> {
+        self.model(Some(&self.default_rewriter_id))
+            .or_else(|| self.models.first())
     }
 
-    pub fn default_rewriter(&self) -> RewriteTarget {
-        self.target(Some(&self.default_rewriter_id))
-            .unwrap_or(RewriteTarget::Apple)
-    }
-
-    pub fn target(&self, id: Option<&str>) -> Option<RewriteTarget> {
+    pub fn model(&self, id: Option<&str>) -> Option<&RewriteModel> {
         let id = id?;
-        if id == RewriteTarget::APPLE_ID {
-            return Some(RewriteTarget::Apple);
-        }
-        let model = self.models.iter().find(|model| model.id == id)?;
-        Some(RewriteTarget::Model(model.clone()))
+        self.models.iter().find(|model| model.id == id)
     }
 
     pub fn app(&self, bundle_id: &str) -> Option<&AppProfile> {
@@ -181,8 +160,9 @@ impl ProfileSettings {
                 .unwrap_or(default_engine),
             style: own_style.unwrap_or(self.default_style),
             rewriter: self
-                .target(rewriter_id)
-                .unwrap_or_else(|| self.default_rewriter()),
+                .model(rewriter_id)
+                .or_else(|| self.default_rewriter())
+                .cloned(),
             custom_instructions,
         }
     }
@@ -194,7 +174,7 @@ pub struct ActiveProfile {
     pub has_app_profile: bool,
     pub engine: Engine,
     pub style: RewriteStyle,
-    pub rewriter: RewriteTarget,
+    pub rewriter: Option<RewriteModel>,
     pub custom_instructions: String,
 }
 
@@ -246,10 +226,10 @@ pub fn remove_app(settings: &mut ProfileSettings, bundle_id: &str) {
 
 pub fn add_model_from_preset(settings: &mut ProfileSettings, preset: &ModelPreset) -> RewriteModel {
     let model = preset.new_model();
-    settings.models.push(model.clone());
-    if settings.models.len() == 1 {
+    if settings.model(Some(&settings.default_rewriter_id)).is_none() {
         settings.default_rewriter_id = model.id.clone();
     }
+    settings.models.push(model.clone());
     model
 }
 
@@ -264,7 +244,8 @@ fn forget_model(settings: &mut ProfileSettings, model_id: &str) {
         settings.default_rewriter_id = settings
             .models
             .first()
-            .map_or_else(|| RewriteTarget::APPLE_ID.into(), |model| model.id.clone());
+            .map(|model| model.id.clone())
+            .unwrap_or_default();
     }
     for app in &mut settings.apps {
         if app.rewriter_id.as_deref() == Some(model_id) {

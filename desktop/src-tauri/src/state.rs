@@ -95,10 +95,10 @@ impl AppState {
             status: self.status.lock().unwrap().clone(),
             context_line: profile.as_ref().and_then(ActiveProfile::context_line),
             engine_badge: engine_badge(engine),
-            rewrite_badge: profile.filter(ActiveProfile::rewrites).map(|profile| Badge {
-                is_local: profile.rewriter.is_local(),
-                text: profile.rewriter.badge(),
-            }),
+            rewrite_badge: profile
+                .filter(ActiveProfile::rewrites)
+                .and_then(|profile| profile.rewriter)
+                .map(|model| Badge { is_local: model.is_local(), text: model.badge() }),
         }
     }
 }

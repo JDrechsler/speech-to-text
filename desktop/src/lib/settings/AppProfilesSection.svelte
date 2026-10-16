@@ -2,7 +2,6 @@
   import { open as openDialog } from "@tauri-apps/plugin-dialog";
   import {
     api,
-    APPLE_REWRITER_ID,
     errorText,
     isMac,
     thisDevice,
@@ -15,7 +14,7 @@
     type RewriteTargetInfo,
   } from "$lib/api";
   import Chevron from "./Chevron.svelte";
-  import { engineMenuTitle, resolve } from "./profiles";
+  import { defaultRewriter, engineMenuTitle, resolve } from "./profiles";
 
   const CHOOSE_FILE = "__choose__";
   const shortcut = isMac ? "⌥Space" : "Alt+Space";
@@ -43,9 +42,8 @@
   let failure = $state<string | null>(null);
 
   let candidates = $derived(running.filter((app) => !profiles.apps.some((known) => known.bundleID === app.id)));
-  let selectableTargets = $derived(targets.filter((target) => target.id !== APPLE_REWRITER_ID));
   let defaultEngineInfo = $derived(engines.find((engine) => engine.id === defaultEngine));
-  let defaultRewriter = $derived(targets.find((target) => target.id === profiles.defaultRewriterID));
+  let defaultTarget = $derived(defaultRewriter(profiles, targets));
   let defaultStyleTitle = $derived(catalog.styles.find((style) => style.id === profiles.defaultStyle)?.title);
 
   function styleTitle(id: string) {
@@ -160,8 +158,8 @@
               <label class="field-row">
                 <span class="field-label wide">Rewrite with</span>
                 <select bind:value={app.rewriterID}>
-                  <option value={undefined}>Default ({defaultRewriter?.displayName ?? "none yet"})</option>
-                  {#each selectableTargets as target (target.id)}
+                  <option value={undefined}>Default ({defaultTarget?.displayName ?? "none yet"})</option>
+                  {#each targets as target (target.id)}
                     <option value={target.id}>{target.menuTitle}</option>
                   {/each}
                 </select>

@@ -2,7 +2,6 @@
   import { ask } from "@tauri-apps/plugin-dialog";
   import {
     api,
-    APPLE_REWRITER_ID,
     errorText,
     thisDevice,
     type ProfileSettings,
@@ -11,7 +10,7 @@
   } from "$lib/api";
   import Icon from "$lib/Icon.svelte";
   import ModelRow from "./ModelRow.svelte";
-  import { isRewriteInUse } from "./profiles";
+  import { defaultRewriter, isRewriteInUse } from "./profiles";
 
   let {
     profiles = $bindable(),
@@ -34,10 +33,7 @@
 
   let inUse = $derived(isRewriteInUse(profiles));
   let summary = $derived(catalog.styles.find((style) => style.id === profiles.defaultStyle)?.summary ?? "");
-  let selectableTargets = $derived(
-    targets.filter((target) => target.id !== APPLE_REWRITER_ID || target.id === profiles.defaultRewriterID),
-  );
-  let chosen = $derived(targets.find((target) => target.id === profiles.defaultRewriterID));
+  let chosen = $derived(defaultRewriter(profiles, targets));
 
   async function addModel(presetName: string) {
     try {
@@ -98,28 +94,36 @@
         <label class="field-row">
           <span>Rewrite with</span>
           <span class="spacer"></span>
-          <select bind:value={profiles.defaultRewriterID}>
-            {#if selectableTargets.length === 0}
-              <option value={profiles.defaultRewriterID} disabled>Add a model below</option>
+          <select
+            value={chosen?.id ?? ""}
+            onchange={(event) => (profiles.defaultRewriterID = event.currentTarget.value)}
+          >
+            {#if !chosen}
+              <option value="" disabled>Add a model below</option>
             {/if}
-            {#each selectableTargets as target (target.id)}
+            {#each targets as target (target.id)}
               <option value={target.id}>
                 {target.isReady ? target.menuTitle : `${target.menuTitle} (set up…)`}
               </option>
             {/each}
           </select>
         </label>
-        {#if chosen && chosen.id !== APPLE_REWRITER_ID}
+        {#if !chosen}
+          <p class="note warning-text">
+            <Icon name="warning" />
+            Add a model below to rewrite your dictation.
+          </p>
+        {:else}
           <p class="note" class:local-text={chosen.isLocal} class:cloud-text={!chosen.isLocal}>
             <Icon name={chosen.isLocal ? "lock" : "cloud"} />
             {chosen.privacyStatement}
           </p>
-        {/if}
-        {#if chosen && !chosen.isReady}
-          <p class="note warning-text">
-            <Icon name="warning" />
-            {chosen.id === APPLE_REWRITER_ID ? "Add a model below to rewrite your dictation." : chosen.setupHint}
-          </p>
+          {#if !chosen.isReady}
+            <p class="note warning-text">
+              <Icon name="warning" />
+              {chosen.setupHint}
+            </p>
+          {/if}
         {/if}
       </div>
       {#each profiles.models as model, index (model.id)}

@@ -3,7 +3,7 @@ use std::time::Duration;
 use reqwest::{Method, RequestBuilder};
 use serde_json::{Map, Value, json};
 
-use super::{ModelApi, RewriteError, RewriteModel, RewriteTarget, instructions};
+use super::{ModelApi, RewriteError, RewriteModel, instructions};
 use crate::profiles::ActiveProfile;
 use crate::secrets;
 
@@ -12,8 +12,8 @@ const REPLY_TIMEOUT: Duration = Duration::from_secs(60);
 const LISTING_TIMEOUT: Duration = Duration::from_secs(15);
 
 pub async fn rewrite(transcript: &str, profile: &ActiveProfile) -> Result<String, RewriteError> {
-    let RewriteTarget::Model(model) = &profile.rewriter else {
-        return Err(RewriteError::AppleUnavailable);
+    let Some(model) = &profile.rewriter else {
+        return Err(RewriteError::NoModel);
     };
     rewrite_with(model, stored_key(model).as_deref(), transcript, profile).await
 }

@@ -59,6 +59,10 @@ export interface ResolvedProfile {
   rewriter: RewriteTargetInfo | undefined;
 }
 
+export function defaultRewriter(settings: ProfileSettings, targets: RewriteTargetInfo[]) {
+  return targets.find((target) => target.id === settings.defaultRewriterID) ?? targets[0];
+}
+
 export function resolve(
   settings: ProfileSettings,
   profile: AppProfile,
@@ -69,8 +73,7 @@ export function resolve(
   const instructions =
     profile.style === "custom" ? profile.customInstructions : settings.defaultCustomInstructions;
   const rewriter =
-    targets.find((target) => target.id === profile.rewriterID) ??
-    targets.find((target) => target.id === settings.defaultRewriterID);
+    targets.find((target) => target.id === profile.rewriterID) ?? defaultRewriter(settings, targets);
   return {
     engine: profile.engine ?? defaultEngine,
     style,

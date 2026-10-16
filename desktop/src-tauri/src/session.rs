@@ -17,7 +17,7 @@ use crate::media;
 use crate::microphone;
 use crate::paste;
 use crate::profiles::{self, ActiveProfile};
-use crate::rewrite;
+use crate::rewrite::{self, RewriteError};
 use crate::settings::Settings;
 use crate::state::{self, Phase, Shared};
 use crate::tray;
@@ -67,7 +67,13 @@ pub fn resolve_profile(default_engine: Engine) -> ActiveProfile {
 
 fn missing_setup(profile: &ActiveProfile, state: &Shared) -> Option<String> {
     state::engine_setup_hint(profile.engine, state).or_else(|| {
-        (profile.rewrites() && !profile.rewriter.is_ready()).then(|| profile.rewriter.setup_hint())
+        if !profile.rewrites() {
+            return None;
+        }
+        match &profile.rewriter {
+            None => Some(RewriteError::NoModel.to_string()),
+            Some(model) => (!model.is_configured()).then(|| model.setup_hint()),
+        }
     })
 }
 
@@ -195,12 +201,13 @@ async fn finish(app: &AppHandle) {
     let mut rewritten = None;
     let mut rewrite_failed = false;
     if !text.is_empty() && profile.rewrites() {
-        state::set_status(app, format!("Rewriting ({})…", profile.rewriter.display_name()));
+        let rewriter = profile.rewriter.as_ref().map_or("no model", |model| model.name.as_str());
+        state::set_status(app, format!("Rewriting ({rewriter})…"));
         match rewrite::rewrite(&text, &profile).await {
             Ok(result) => rewritten = Some(result),
             Err(error) => {
                 rewrite_failed = true;
-                eprintln!("rewrite_error rewriter={} error={error}", profile.rewriter.display_name());
+                eprintln!("rewrite_error rewriter={rewriter} error={error}");
                 state::set_status(app, format!("{error} Pasted the original text."));
             }
         }

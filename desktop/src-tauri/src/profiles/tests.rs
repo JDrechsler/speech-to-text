@@ -78,14 +78,14 @@ fn app_profile_overrides_the_defaults() {
     assert!(slack.has_app_profile);
     assert_eq!(slack.engine, Engine::Scribe);
     assert_eq!(slack.style, RewriteStyle::Chat);
-    assert_eq!(slack.rewriter, RewriteTarget::Model(model));
+    assert_eq!(slack.rewriter, Some(model.clone()));
     assert_eq!(slack.context_line().as_deref(), Some("Slack · Chat message"));
 
     let mail = settings.resolve(None, Some("Mail"), Engine::Whisper);
     assert!(!mail.has_app_profile);
     assert_eq!(mail.engine, Engine::Whisper);
     assert_eq!(mail.style, RewriteStyle::Cleanup);
-    assert_eq!(mail.rewriter, RewriteTarget::Apple);
+    assert_eq!(mail.rewriter, Some(model));
     assert_eq!(mail.context_line().as_deref(), Some("Clean up"));
 }
 
@@ -134,8 +134,11 @@ fn custom_app_style_uses_the_apps_own_instructions() {
 
 #[test]
 fn deleted_model_falls_back_to_the_default_rewriter() {
+    let model = local_model();
     let settings = ProfileSettings {
         default_style: RewriteStyle::Cleanup,
+        default_rewriter_id: model.id.clone(),
+        models: vec![model.clone()],
         ..ProfileSettings::default()
     };
     let orphan = AppProfile {
@@ -143,17 +146,20 @@ fn deleted_model_falls_back_to_the_default_rewriter() {
         ..AppProfile::new("com.apple.mail", "Mail")
     };
     let profile = settings.resolve(Some(&orphan), Some("Mail"), Engine::Whisper);
-    assert_eq!(profile.rewriter, RewriteTarget::Apple);
+    assert_eq!(profile.rewriter, Some(model));
 }
 
 #[test]
-fn rewrite_targets_list_apple_first_then_the_models() {
+fn a_mac_app_default_of_apple_intelligence_falls_back_to_the_first_model() {
     let model = local_model();
-    let settings = ProfileSettings { models: vec![model.clone()], ..ProfileSettings::default() };
-    let targets = settings.rewrite_targets();
-    let ids: Vec<&str> = targets.iter().map(RewriteTarget::id).collect();
-    assert_eq!(ids, ["apple", model.id.as_str()]);
-    assert_eq!(settings.target(None), None);
+    let settings = ProfileSettings {
+        default_rewriter_id: "apple".into(),
+        models: vec![model.clone()],
+        ..ProfileSettings::default()
+    };
+    assert_eq!(settings.default_rewriter(), Some(&model));
+    assert_eq!(settings.model(None), None);
+    assert_eq!(ProfileSettings::default().resolve(None, None, Engine::Whisper).rewriter, None);
 }
 
 #[test]
@@ -177,7 +183,7 @@ fn reads_and_rewrites_the_mac_apps_file_unchanged() {
     assert_eq!(settings.models[0].api, ModelApi::Anthropic);
     assert_eq!(settings.models[0].base_url, "https://api.anthropic.com/v1");
     assert_eq!(settings.models[1].key_help_url, None);
-    assert_eq!(settings.default_rewriter().display_name(), "Claude");
+    assert_eq!(settings.default_rewriter().map(|model| model.name.as_str()), Some("Claude"));
 
     let written = serde_json::to_value(&settings).unwrap();
     let original: Value = serde_json::from_str(MAC_APP_FILE).unwrap();
@@ -194,7 +200,7 @@ fn reading_tolerates_missing_unknown_and_null_keys() {
     });
     let settings: ProfileSettings = serde_json::from_value(file).unwrap();
     assert_eq!(settings.default_style, RewriteStyle::Email);
-    assert_eq!(settings.default_rewriter_id, "apple");
+    assert_eq!(settings.default_rewriter_id, "");
     assert_eq!(settings.apps[0].engine, None);
     assert_eq!(settings.apps[0].custom_instructions, "");
     assert_eq!(settings.models[0].model, "");
@@ -236,7 +242,7 @@ fn adding_an_app_twice_keeps_one_and_the_list_stays_sorted() {
 
 #[test]
 fn first_added_model_becomes_the_default_rewriter() {
-    let mut settings = ProfileSettings::default();
+    let mut settings = ProfileSettings { default_rewriter_id: "apple".into(), ..ProfileSettings::default() };
     let first = add_model_from_preset(&mut settings, &ModelPreset::LOCAL[0]);
     assert_eq!(settings.default_rewriter_id, first.id);
     let second = add_model_from_preset(&mut settings, &ModelPreset::CLOUD[0]);
@@ -270,6 +276,6 @@ fn removing_a_model_clears_every_reference_to_it() {
     assert_eq!(settings.apps[1].rewriter_id.as_deref(), Some(second.id.as_str()));
 
     forget_model(&mut settings, &second.id);
-    assert_eq!(settings.default_rewriter_id, "apple");
+    assert_eq!(settings.default_rewriter_id, "");
     assert_eq!(settings.apps[1].rewriter_id, None);
 }

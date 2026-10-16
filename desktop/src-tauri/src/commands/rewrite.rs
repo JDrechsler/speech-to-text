@@ -3,7 +3,7 @@ use tauri::AppHandle;
 
 use crate::frontmost::{self, AppIdentity};
 use crate::profiles::{self, ProfileSettings, RewriteStyle};
-use crate::rewrite::{self, ModelApi, ModelPreset, RewriteModel, RewriteTarget};
+use crate::rewrite::{self, ModelApi, ModelPreset, RewriteModel};
 use crate::secrets;
 
 #[derive(Serialize)]
@@ -44,27 +44,24 @@ pub struct TargetInfo {
     is_ready: bool,
     setup_hint: Option<String>,
     has_key: bool,
-    key_placeholder: Option<String>,
+    key_placeholder: String,
 }
 
 impl TargetInfo {
-    fn of(target: &RewriteTarget) -> TargetInfo {
-        let model = match target {
-            RewriteTarget::Model(model) => Some(model),
-            RewriteTarget::Apple => None,
-        };
+    fn of(model: &RewriteModel) -> TargetInfo {
+        let is_ready = model.is_configured();
         TargetInfo {
-            id: target.id().to_string(),
-            display_name: target.display_name().to_string(),
-            is_local: target.is_local(),
-            destination: target.destination(),
-            badge: target.badge(),
-            menu_title: target.menu_title(),
-            privacy_statement: target.privacy_statement(),
-            is_ready: target.is_ready(),
-            setup_hint: (!target.is_ready()).then(|| target.setup_hint()),
-            has_key: model.is_some_and(|model| secrets::contains(&model.key_id())),
-            key_placeholder: model.map(RewriteModel::key_placeholder),
+            id: model.id.clone(),
+            display_name: model.name.clone(),
+            is_local: model.is_local(),
+            destination: model.destination(),
+            badge: model.badge(),
+            menu_title: model.menu_title(),
+            privacy_statement: model.privacy_statement(),
+            is_ready,
+            setup_hint: (!is_ready).then(|| model.setup_hint()),
+            has_key: secrets::contains(&model.key_id()),
+            key_placeholder: model.key_placeholder(),
         }
     }
 }
@@ -96,17 +93,14 @@ pub fn save_profile_settings(settings: ProfileSettings) -> Result<ProfileSetting
 
 #[tauri::command]
 pub fn rewrite_targets() -> Vec<TargetInfo> {
-    profiles::load().rewrite_targets().iter().map(TargetInfo::of).collect()
+    profiles::load().models.iter().map(TargetInfo::of).collect()
 }
 
 #[tauri::command]
 pub fn add_rewrite_model(preset: String) -> Result<ProfileSettings, String> {
     let preset = ModelPreset::named(&preset).ok_or("Unknown model preset")?;
     let mut settings = profiles::load();
-    let model = profiles::add_model_from_preset(&mut settings, &preset);
-    if settings.default_rewriter_id == RewriteTarget::APPLE_ID {
-        settings.default_rewriter_id = model.id;
-    }
+    profiles::add_model_from_preset(&mut settings, &preset);
     profiles::save(&settings)?;
     Ok(settings)
 }
