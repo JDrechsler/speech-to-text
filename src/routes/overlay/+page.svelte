@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { listen } from "@tauri-apps/api/event";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
   import { api, isMac, type OverlayState } from "$lib/api";
   import PrivacyBadge from "$lib/PrivacyBadge.svelte";
 
@@ -33,9 +34,14 @@
       const next = [...levels, event.payload];
       levels = next.length > MAX_BARS ? next.slice(next.length - MAX_BARS) : next;
     });
+    const dragWindow = (event: MouseEvent) => {
+      if (event.button === 0) getCurrentWindow().startDragging();
+    };
+    if (!isMac) window.addEventListener("mousedown", dragWindow);
     return () => {
       unlistenState.then((stop) => stop());
       unlistenLevel.then((stop) => stop());
+      window.removeEventListener("mousedown", dragWindow);
     };
   });
 </script>

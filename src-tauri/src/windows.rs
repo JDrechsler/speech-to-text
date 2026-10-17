@@ -9,7 +9,7 @@ const OVERLAY_HEIGHT: f64 = 106.0;
 const OVERLAY_BOTTOM_MARGIN: f64 = 80.0;
 
 pub fn create_overlay(app: &AppHandle) -> tauri::Result<WebviewWindow> {
-    WebviewWindowBuilder::new(app, OVERLAY, WebviewUrl::App("overlay".into()))
+    let window = WebviewWindowBuilder::new(app, OVERLAY, WebviewUrl::App("overlay".into()))
         .title("Speech to Text")
         .inner_size(OVERLAY_WIDTH, OVERLAY_HEIGHT)
         .decorations(false)
@@ -22,7 +22,10 @@ pub fn create_overlay(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .focusable(false)
         .focused(false)
         .visible(false)
-        .build()
+        .build()?;
+    #[cfg(target_os = "macos")]
+    drag_on_click_without_activating(&window);
+    Ok(window)
 }
 
 pub fn show_overlay(app: &AppHandle) {
@@ -61,6 +64,21 @@ fn place_at_bottom_of_active_screen(app: &AppHandle, window: &WebviewWindow) {
     let y = area.position.y as f64 + area.size.height as f64
         - (OVERLAY_HEIGHT + OVERLAY_BOTTOM_MARGIN) * scale;
     let _ = window.set_position(PhysicalPosition::new(x.round() as i32, y.round() as i32));
+}
+
+#[cfg(target_os = "macos")]
+fn drag_on_click_without_activating(window: &WebviewWindow) {
+    use objc2::runtime::{Bool, NSObjectProtocol};
+    use objc2::{msg_send, sel};
+    use objc2_app_kit::NSWindow;
+    let Ok(pointer) = window.ns_window() else {
+        return;
+    };
+    let ns_window = unsafe { &*(pointer as *const NSWindow) };
+    ns_window.setMovableByWindowBackground(true);
+    if ns_window.respondsToSelector(sel!(_setPreventsActivation:)) {
+        let _: () = unsafe { msg_send![ns_window, _setPreventsActivation: Bool::YES] };
+    }
 }
 
 #[cfg(target_os = "macos")]
