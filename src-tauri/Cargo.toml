@@ -1,6 +1,6 @@
 [package]
 name = "speech-to-text"
-version = "2.0.0"
+version = "2.0.1"
 description = "Free, open-source dictation for macOS, Windows and Linux"
 authors = ["Johannes Drechsler"]
 license = "MIT"
