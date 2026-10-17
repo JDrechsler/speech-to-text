@@ -1,0 +1,29 @@
+# Changelog
+
+## 2.0.1
+
+- You can now drag the recording window anywhere while you talk, so it never covers what you are looking at. Your words are still pasted into the app you were typing in.
+
+## 2.0.0
+
+- Speech to Text now runs on Windows and Linux as well as macOS.
+- Rewrite before pasting: a language model can clean up what you said, or turn it into an email, a chat message or a prompt for an AI. Use a model on your own computer, or your own key for a cloud model.
+- Per-app profiles: the app you are typing in decides the engine, the rewrite style and the model. A casual message in Slack, a clear prompt in your terminal, a proper email in Mail. Available on macOS and Windows.
+- Much lighter on memory. Whisper loads when you press the hotkey and unloads after 5 minutes without dictation, instead of keeping about 2 GB in memory all the time.
+- No more Keychain prompts. API keys are kept in an encrypted file that only opens on your computer.
+- The Engine menu marks engines on your computer in green and cloud engines in orange.
+- Upgrading from version 1 keeps your settings and API keys.
+
+## 1.1.1
+
+- Settings shows which version of the app you are running.
+- If you build the app yourself with an Apple Development certificate, macOS now keeps the Microphone and Accessibility permissions after each rebuild.
+
+## 1.1.0
+
+- New cloud engine: Step-Audio 3 ASR from StepFun. It understands English, Spanish, French, Chinese, Japanese and Korean, but not German, and you pick the spoken language yourself in Settings.
+
+## 1.0.1
+
+- First open-source release.
+- Settings starts with one simple choice: On this Mac or Cloud. Cloud providers only appear once you pick Cloud, and each one is clearly marked as uploading your audio.

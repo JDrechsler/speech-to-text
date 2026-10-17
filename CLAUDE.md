@@ -57,11 +57,18 @@ bun tauri build --bundles app                           # full bundle, installs 
 
 `SPEECH_TO_TEXT_TEST_WAV=clip.wav cargo test --manifest-path src-tauri/Cargo.toml --lib -- --include-ignored` also runs a real Whisper transcription.
 
+## Releasing
+
+1. Bump the version in `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and `package.json`.
+2. Add a `## <version>` section at the top of `CHANGELOG.md`, written for people who use the app: plain sentences about what they will notice, no links, no pull request or commit references.
+3. Once the pull request is merged, tag `v<version>` on `main` and push the tag. CI builds every platform and publishes the release with that changelog section as its notes, and fails if the section is missing.
+
 ## Rules that are easy to break
 
 - **Privacy labelling is the product.** Every engine declares truthfully whether it is local and who its provider is. Cloud engines are marked "uploads audio" everywhere they appear. Rewrite models count as local only for loopback addresses.
 - **The chosen engine is the only engine.** No silent fallback from one engine to another. A failure is reported and the audio stays in History.
 - **Audio is never lost.** The recorder writes to disk while recording; never move transcription before the file is closed.
+- **The overlay never activates the app.** Paste goes to whichever app is frontmost, so a click or drag on the overlay must not bring Speech to Text forward. On macOS `drag_on_click_without_activating` in `windows.rs` sets `_setPreventsActivation:`; a plain `NSWindow` drops the public non-activating style mask.
 - **Never block the main thread.** Sync Tauri commands, tray menu building and setup run on it. No subprocesses, network calls or waits on the Whisper lock there; the hardware ID is read once and cached for that reason.
 - **The Whisper prompt is fake preceding transcript, not an instruction.** Whisper continues whatever text the prompt looks like. A glossary-style prompt reads like a meeting transcript's cast list and makes Whisper invent speaker labels. Keep the first-person dictation framing in `vocabulary_prompt`.
 - **MAI-Transcribe-2 rejects more than 50 phrases** with HTTP 400, so `cloud/mai.rs` caps the dictionary at 50.

@@ -129,6 +129,7 @@ You add the model yourself: Claude, OpenAI, Gemini, Mistral, Groq, OpenRouter, a
 |---|---|
 | Start, stop and paste | ⌥ Space (Alt+Space) |
 | Cancel the current recording | ⌥ Esc (Alt+Esc) |
+| Move the recording window out of the way | Drag it while you talk |
 | See, replay, copy or re-transcribe the last 24 hours | Menu bar icon → History… |
 | Choose a microphone | Menu bar icon → Microphone |
 | Pause music and videos while you talk (macOS) | Menu bar icon → Pause Media While Recording |
