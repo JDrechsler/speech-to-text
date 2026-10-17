@@ -57,6 +57,12 @@ bun tauri build --bundles app                           # full bundle, installs 
 
 `SPEECH_TO_TEXT_TEST_WAV=clip.wav cargo test --manifest-path src-tauri/Cargo.toml --lib -- --include-ignored` also runs a real Whisper transcription.
 
+## Releasing
+
+1. Bump the version in `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and `package.json`.
+2. Add a `## <version>` section at the top of `CHANGELOG.md`, written for people who use the app: plain sentences about what they will notice, no links, no pull request or commit references.
+3. Once the pull request is merged, tag `v<version>` on `main` and push the tag. CI builds every platform and publishes the release with that changelog section as its notes, and fails if the section is missing.
+
 ## Rules that are easy to break
 
 - **Privacy labelling is the product.** Every engine declares truthfully whether it is local and who its provider is. Cloud engines are marked "uploads audio" everywhere they appear. Rewrite models count as local only for loopback addresses.
