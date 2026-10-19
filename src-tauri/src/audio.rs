@@ -70,12 +70,16 @@ fn input_device_names() -> Vec<String> {
 fn input_device_names() -> Vec<String> {
     cpal::default_host()
         .input_devices()
-        .map(|devices| devices.filter_map(|device| device.name().ok()).collect())
+        .map(|devices| devices.filter_map(|device| device_name(&device)).collect())
         .unwrap_or_default()
 }
 
 pub fn default_device_name() -> Option<String> {
-    cpal::default_host().default_input_device()?.name().ok()
+    device_name(&cpal::default_host().default_input_device()?)
+}
+
+fn device_name(device: &Device) -> Option<String> {
+    device.description().ok().map(|description| description.name().to_string())
 }
 
 fn is_built_in(name: &str) -> bool {
@@ -88,7 +92,7 @@ pub fn resolve_device(preference: Option<&str>) -> Option<Device> {
 }
 
 pub fn resolved_device_name(preference: Option<&str>) -> Option<String> {
-    resolve_device(preference).and_then(|device| device.name().ok())
+    resolve_device(preference).and_then(|device| device_name(&device))
 }
 
 pub fn unavailable_preference_notice(preference: Option<&str>) -> Option<String> {
@@ -110,7 +114,7 @@ fn find_preferred(wanted: &str) -> Option<Device> {
     cpal::default_host()
         .devices()
         .ok()?
-        .find(|device| device.name().is_ok_and(|candidate| candidate == name))
+        .find(|device| device_name(device).is_some_and(|candidate| candidate == name))
 }
 
 fn record(
@@ -195,13 +199,13 @@ fn open_stream(microphone: Option<&str>) -> Result<(Stream, Receiver<Vec<f32>>, 
     let format = supported.sample_format();
     let config: StreamConfig = supported.into();
     let channels = config.channels as usize;
-    let rate = config.sample_rate.0;
+    let rate = config.sample_rate;
     let (sender, receiver) = mpsc::channel::<Vec<f32>>();
     let on_error = |error| eprintln!("microphone stream error: {error}");
 
     let stream = match format {
         SampleFormat::F32 => device.build_input_stream(
-            &config,
+            config.clone(),
             move |data: &[f32], _: &_| {
                 let _ = sender.send(mono(data.iter().copied(), channels));
             },
@@ -209,7 +213,7 @@ fn open_stream(microphone: Option<&str>) -> Result<(Stream, Receiver<Vec<f32>>, 
             None,
         ),
         SampleFormat::I16 => device.build_input_stream(
-            &config,
+            config.clone(),
             move |data: &[i16], _: &_| {
                 let _ = sender.send(mono(data.iter().map(|&sample| sample as f32 / 32_768.0), channels));
             },
@@ -217,7 +221,7 @@ fn open_stream(microphone: Option<&str>) -> Result<(Stream, Receiver<Vec<f32>>, 
             None,
         ),
         SampleFormat::U16 => device.build_input_stream(
-            &config,
+            config.clone(),
             move |data: &[u16], _: &_| {
                 let _ = sender.send(mono(
                     data.iter().map(|&sample| (sample as f32 - 32_768.0) / 32_768.0),
