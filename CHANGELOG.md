@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.2
+
+- Fixed the microphone staying on after you finished dictating, which made macOS show it in use even while you were not recording. It now turns off as soon as you stop or cancel a recording.
+
 ## 2.0.1
 
 - You can now drag the recording window anywhere while you talk, so it never covers what you are looking at. Your words are still pasted into the app you were typing in.

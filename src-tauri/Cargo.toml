@@ -1,6 +1,6 @@
 [package]
 name = "speech-to-text"
-version = "2.0.1"
+version = "2.0.2"
 description = "Free, open-source dictation for macOS, Windows and Linux"
 authors = ["Johannes Drechsler"]
 license = "MIT"
@@ -25,7 +25,7 @@ serde_json = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "fs", "net", "io-util"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "stream", "rustls-tls"] }
 futures-util = "0.3"
-cpal = "0.15"
+cpal = "0.18"
 hound = "3.5"
 rubato = "0.16"
 whisper-rs = "0.16"
