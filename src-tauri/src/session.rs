@@ -17,6 +17,7 @@ use crate::media;
 use crate::microphone;
 use crate::paste;
 use crate::profiles::{self, ActiveProfile};
+use crate::punctuation;
 use crate::rewrite::{self, RewriteError};
 use crate::settings::Settings;
 use crate::state::{self, Phase, Shared};
@@ -24,7 +25,7 @@ use crate::tray;
 use crate::whisper;
 use crate::windows;
 
-const WHISPER_IDLE_UNLOAD: Duration = Duration::from_secs(5 * 60);
+const LOCAL_IDLE_UNLOAD: Duration = Duration::from_secs(5 * 60);
 const ERROR_PAUSE: Duration = Duration::from_secs(3);
 const NOTICE_PAUSE: Duration = Duration::from_millis(1500);
 const MEDIA_FADE: Duration = Duration::from_millis(250);
@@ -86,9 +87,7 @@ fn start(app: &AppHandle, state: &Shared) {
         windows::open_settings(app);
         return;
     }
-    if profile.engine.is_local() {
-        preload_whisper(state);
-    }
+    preload_local_engine(profile.engine, state);
 
     let generation = state.generation.fetch_add(1, Ordering::SeqCst) + 1;
     *state.active_profile.lock().unwrap() = Some(profile);
@@ -156,12 +155,22 @@ fn discard(recorder: Recorder) {
     let _ = std::fs::remove_file(path);
 }
 
-fn preload_whisper(state: &Shared) {
+fn preload_local_engine(engine: Engine, state: &Shared) {
     let state = state.clone();
-    std::thread::spawn(move || {
-        let model = state.whisper_model().path();
-        let _ = state.whisper.load(&model);
-    });
+    match engine {
+        Engine::Whisper => {
+            std::thread::spawn(move || {
+                let model = state.whisper_model().path();
+                let _ = state.whisper.load(&model);
+            });
+        }
+        Engine::Nemotron => {
+            std::thread::spawn(move || {
+                let _ = state.nemotron.start(&state.nemotron_model().decoder_path());
+            });
+        }
+        _ => {}
+    }
 }
 
 async fn finish(app: &AppHandle) {
@@ -187,7 +196,7 @@ async fn finish(app: &AppHandle) {
     media::resume(&state.media);
 
     let engine = profile.engine;
-    let label = engine.history_label(state.whisper_model().id);
+    let label = state.history_label(engine);
     let status_app = app.clone();
     let transcription = transcribe_file(&state, engine, &path, duration, move |status| {
         state::set_status(&status_app, status)
@@ -238,7 +247,7 @@ async fn finish(app: &AppHandle) {
     windows::hide_overlay(app);
     become_idle(app);
     if engine.is_local() {
-        schedule_whisper_unload(&state);
+        schedule_local_unload(&state);
     }
 }
 
@@ -249,9 +258,24 @@ pub async fn transcribe_file(
     duration: f64,
     on_status: impl Fn(String) + Send + Sync + 'static,
 ) -> Result<String, String> {
+    let text = transcribe_with(state, engine, path, duration, on_status).await?;
+    Ok(punctuation::with_final_period(&text))
+}
+
+async fn transcribe_with(
+    state: &Shared,
+    engine: Engine,
+    path: &Path,
+    duration: f64,
+    on_status: impl Fn(String) + Send + Sync + 'static,
+) -> Result<String, String> {
     let settings = state.settings();
     on_status(format!("Transcribing ({})…", engine.short_name()));
-    if engine.is_local() {
+    if engine == Engine::Nemotron {
+        let decoder = state.nemotron_model().decoder_path();
+        return state.nemotron.transcribe(path, &decoder).await;
+    }
+    if engine == Engine::Whisper {
         let state = state.clone();
         let wav: PathBuf = path.to_path_buf();
         let model = state.whisper_model().path();
@@ -327,12 +351,13 @@ fn become_idle(app: &AppHandle) {
     state::publish(app);
 }
 
-pub fn schedule_whisper_unload(state: &Shared) {
+pub fn schedule_local_unload(state: &Shared) {
     let state = state.clone();
     tauri::async_runtime::spawn(async move {
-        tokio::time::sleep(WHISPER_IDLE_UNLOAD).await;
+        tokio::time::sleep(LOCAL_IDLE_UNLOAD).await;
         if state.phase() == Phase::Idle {
-            state.whisper.unload_if_idle_for(WHISPER_IDLE_UNLOAD);
+            state.whisper.unload_if_idle_for(LOCAL_IDLE_UNLOAD);
+            state.nemotron.stop_if_idle_for(LOCAL_IDLE_UNLOAD);
         }
     });
 }

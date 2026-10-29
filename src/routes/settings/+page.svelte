@@ -25,6 +25,7 @@
   import CloudDetails from "$lib/settings/CloudDetails.svelte";
   import EngineRow from "$lib/settings/EngineRow.svelte";
   import GeneralSection from "$lib/settings/GeneralSection.svelte";
+  import NemotronDetails from "$lib/settings/NemotronDetails.svelte";
   import RewriteSection from "$lib/settings/RewriteSection.svelte";
   import WhisperDetails from "$lib/settings/WhisperDetails.svelte";
 
@@ -34,6 +35,7 @@
   let engines = $state<EngineInfo[]>([]);
   let statuses = $state<EngineStatus[]>([]);
   let models = $state<WhisperModel[]>([]);
+  let nemotronModels = $state<WhisperModel[]>([]);
   let languages = $state<Language[]>([]);
   let saved = $state<string[]>([]);
   let general = $state<GeneralStatus | null>(null);
@@ -52,7 +54,7 @@
   let current = $derived(engines.find((engine) => engine.id === settings?.engine));
   let usesCloud = $derived(current ? !current.isLocal : false);
   let cloudEngines = $derived(engines.filter((engine) => !engine.isLocal));
-  let whisper = $derived(engines.find((engine) => engine.isLocal));
+  let localEngines = $derived(engines.filter((engine) => engine.isLocal));
   let currentNeedsSetup = $derived(
     statuses.find((status) => status.id === settings?.engine)?.setupHint !== null && statuses.length > 0,
   );
@@ -62,18 +64,29 @@
     return statuses.find((status) => status.id === id)?.setupHint === null;
   }
 
-  function whisperStatus(): string {
-    const downloading = Object.values(progress);
-    if (downloading.length > 0) return `Downloading ${Math.round(Math.max(...downloading) * 100)}%`;
-    const selected = models.find((model) => model.isSelected);
+  function isDownloading(id: EngineId) {
+    const list = id === "nemotron" ? nemotronModels : models;
+    return list.some((model) => progress[model.id] !== undefined);
+  }
+
+  function downloadText(ids: string[]): string {
+    const fractions = ids.filter((id) => progress[id] !== undefined).map((id) => progress[id]);
+    return `Downloading ${Math.round(Math.max(...fractions) * 100)}%`;
+  }
+
+  function localStatus(id: EngineId): string {
+    const list = id === "nemotron" ? nemotronModels : models;
+    if (isDownloading(id)) return downloadText(list.map((model) => model.id));
+    const selected = list.find((model) => model.isSelected);
     return selected?.isInstalled ? selected.name : "No model yet";
   }
 
   async function reload() {
-    [settings, statuses, models, saved, general, microphones, targets] = await Promise.all([
+    [settings, statuses, models, nemotronModels, saved, general, microphones, targets] = await Promise.all([
       api.settings(),
       api.engineStatus(),
       api.whisperModels(),
+      api.nemotronModels(),
       api.savedCredentials(),
       api.generalStatus(),
       api.inputDevices(),
@@ -164,7 +177,7 @@
   });
 </script>
 
-{#if settings && general && catalog && profiles && whisper}
+{#if settings && general && catalog && profiles}
   <main>
     <section class="section">
       <h2>Where your speech is transcribed</h2>
@@ -189,7 +202,7 @@
               <span class="warning-text"><Icon name="warning" size={12} /></span>
               {usesCloud
                 ? `Add your ${current?.provider} API key below, or pick another provider.`
-                : "Download a Whisper model to start dictating."}
+                : `Download ${current?.id === "nemotron" ? current.displayName : "a Whisper model"} to start dictating.`}
             </p>
           {/if}
         </div>
@@ -212,24 +225,37 @@
             </EngineRow>
           {/each}
         {:else}
-          <EngineRow
-            engine={whisper}
-            selected
-            showsSelector={false}
-            ready={isReady(whisper.id) && Object.keys(progress).length === 0}
-            statusText={whisperStatus()}
-            bind:open={expanded[whisper.id]}
-          >
-            <WhisperDetails
-              {models}
-              bind:progress
-              bind:failures
-              isEngineSelected={settings.engine === whisper.id}
-              language={settings.whisperLanguage}
-              {languages}
-              onchange={reload}
-            />
-          </EngineRow>
+          {#each localEngines as engine (engine.id)}
+            <EngineRow
+              {engine}
+              selected={settings.engine === engine.id}
+              showsSelector={localEngines.length > 1}
+              ready={isReady(engine.id) && !isDownloading(engine.id)}
+              statusText={localStatus(engine.id)}
+              bind:open={expanded[engine.id]}
+              onselect={() => select(engine.id)}
+            >
+              {#if engine.id === "nemotron"}
+                <NemotronDetails
+                  models={nemotronModels}
+                  bind:progress
+                  bind:failures
+                  isEngineSelected={settings.engine === engine.id}
+                  onchange={reload}
+                />
+              {:else}
+                <WhisperDetails
+                  {models}
+                  bind:progress
+                  bind:failures
+                  isEngineSelected={settings.engine === engine.id}
+                  language={settings.whisperLanguage}
+                  {languages}
+                  onchange={reload}
+                />
+              {/if}
+            </EngineRow>
+          {/each}
         {/if}
       </div>
     </section>

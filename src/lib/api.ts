@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-export type EngineId = "whisper" | "mai" | "scribe" | "assembly" | "stepfun";
+export type EngineId = "whisper" | "nemotron" | "mai" | "scribe" | "assembly" | "stepfun" | "openai";
 export type Phase = "idle" | "recording" | "finishing";
 
 export interface Badge {
@@ -19,7 +19,9 @@ export interface OverlayState {
 export interface Settings {
   engine: EngineId;
   lastCloudEngine: EngineId | null;
+  lastLocalEngine: EngineId | null;
   whisperModel: string | null;
+  nemotronModel: string | null;
   whisperLanguage: string;
   stepfunLanguage: string;
   azureEndpoint: string | null;
@@ -198,6 +200,11 @@ export const api = {
   downloadWhisperModel: (id: string) => invoke<void>("download_whisper_model", { id }),
   cancelWhisperDownload: (id: string) => invoke<void>("cancel_whisper_download", { id }),
   deleteWhisperModel: (id: string) => invoke<void>("delete_whisper_model", { id }),
+  nemotronModels: () => invoke<WhisperModel[]>("nemotron_models"),
+  selectNemotronModel: (id: string) => invoke<Settings>("select_nemotron_model", { id }),
+  downloadNemotron: (id: string) => invoke<void>("download_nemotron", { id }),
+  cancelNemotronDownload: (id: string) => invoke<void>("cancel_nemotron_download", { id }),
+  deleteNemotron: (id: string) => invoke<void>("delete_nemotron", { id }),
   savedCredentials: () => invoke<string[]>("saved_credentials"),
   saveCredential: (id: string, value: string) => invoke<void>("save_credential", { id, value }),
   removeCredential: (id: string) => invoke<void>("remove_credential", { id }),
@@ -234,10 +241,12 @@ export const api = {
 
 const HISTORY_LABEL_PREFIXES: [string, EngineId][] = [
   ["whisper", "whisper"],
+  ["nemotron", "nemotron"],
   ["mai", "mai"],
   ["scribe", "scribe"],
   ["assemblyai", "assembly"],
   ["stepfun", "stepfun"],
+  ["openai", "openai"],
 ];
 
 export function engineOfHistoryLabel(label: string): EngineId | undefined {

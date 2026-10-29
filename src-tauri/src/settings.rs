@@ -10,7 +10,9 @@ use crate::paths;
 pub struct Settings {
     pub engine: Engine,
     pub last_cloud_engine: Option<Engine>,
+    pub last_local_engine: Option<Engine>,
     pub whisper_model: Option<String>,
+    pub nemotron_model: Option<String>,
     pub whisper_language: String,
     pub stepfun_language: String,
     pub azure_endpoint: Option<String>,
@@ -24,7 +26,9 @@ impl Default for Settings {
         Settings {
             engine: Engine::Whisper,
             last_cloud_engine: None,
+            last_local_engine: None,
             whisper_model: None,
+            nemotron_model: None,
             whisper_language: "auto".into(),
             stepfun_language: "en".into(),
             azure_endpoint: None,
@@ -40,6 +44,12 @@ impl Settings {
         self.last_cloud_engine
             .filter(|engine| !engine.is_local())
             .unwrap_or(Engine::Scribe)
+    }
+
+    pub fn preferred_local(&self) -> Engine {
+        self.last_local_engine
+            .filter(|engine| engine.is_local() && engine.is_available())
+            .unwrap_or(Engine::Whisper)
     }
 }
 
@@ -75,7 +85,9 @@ fn imported_from_mac_app() -> Option<Settings> {
     Some(Settings {
         engine: engine("enginePreference").unwrap_or(defaults.engine),
         last_cloud_engine: engine("lastCloudEngine"),
+        last_local_engine: None,
         whisper_model: text("whisperModel"),
+        nemotron_model: None,
         whisper_language: text("whisperLanguage").unwrap_or(defaults.whisper_language),
         stepfun_language: text("stepFunLanguage").unwrap_or(defaults.stepfun_language),
         azure_endpoint: text("AZURE_SPEECH_ENDPOINT"),

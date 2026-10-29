@@ -24,11 +24,13 @@ Do these in order and report what you did. Prefer the Settings window whenever t
    ```
    The data folder is `~/Library/Application Support/SpeechToText` on macOS, `%APPDATA%\SpeechToText` on Windows and `~/.local/share/SpeechToText` on Linux. Model ids, file names and byte sizes are listed in `CATALOG` in `src-tauri/src/models.rs`. A file whose size does not match the catalog is a broken download.
 
-3. **Cloud engines (only if the user wants one).** Never ask the user to paste an API key into the chat. Keys are entered in Settings and saved to `api-keys.enc` in the data folder, encrypted with a key derived from this computer's hardware ID; there is no command-line way to add one. The Azure endpoint is not secret and lives in `settings.json` as `azureEndpoint`. The engine is `settings.json` → `engine`: `whisper`, `mai`, `scribe`, `assembly` or `stepfun`. Quit the app before editing `settings.json`.
+   Nemotron 3.5 Transcribe (Apple silicon Macs with 32 GB or more) comes as Compact (21 GB) and Full (37 GB); let the user click **Download** in Settings. Its files, sizes and pinned URLs are in `CATALOG` in `src-tauri/src/nemotron/mod.rs`.
+
+3. **Cloud engines (only if the user wants one).** Never ask the user to paste an API key into the chat. Keys are entered in Settings and saved to `api-keys.enc` in the data folder, encrypted with a key derived from this computer's hardware ID; there is no command-line way to add one. The Azure endpoint is not secret and lives in `settings.json` as `azureEndpoint`. The engine is `settings.json` → `engine`: `whisper`, `nemotron`, `mai`, `scribe`, `assembly`, `openai` or `stepfun`. Quit the app before editing `settings.json`.
 
 4. **Permissions** cannot be granted from the terminal. On macOS, tell the user to allow Microphone on the first recording and Accessibility when asked (needed for auto-paste).
 
-Always tell the user which engine is active and whether it uploads audio. Whisper never does; every cloud engine uploads each recording to its provider.
+Always tell the user which engine is active and whether it uploads audio. Whisper and Nemotron never do; every cloud engine uploads each recording to its provider.
 
 ## Layout
 
@@ -36,6 +38,7 @@ Always tell the user which engine is active and whether it uploads audio. Whispe
 |---|---|
 | `src-tauri/src/engines.rs` | The engine list: names, provider, local vs cloud, required credentials |
 | `src-tauri/src/models.rs`, `whisper.rs` | Whisper model catalog and downloads; in-process whisper.cpp that loads on the hotkey and unloads after 5 idle minutes |
+| `src-tauri/src/nemotron/` | Nemotron 3.5 Transcribe: downloads the model and NVIDIA's NeMo-Speech.cpp runtime, runs `nemo-speech serve` on a loopback port while in use |
 | `src-tauri/src/cloud/` | One file per cloud provider, plus the retry policy |
 | `src-tauri/src/session.rs`, `state.rs` | Recording state machine: recorder → overlay → engine → rewrite → paste and history |
 | `src-tauri/src/rewrite/`, `profiles/` | Optional rewrite step with a model the user adds, and per-app profiles |
@@ -73,6 +76,10 @@ bun tauri build --bundles app                           # full bundle, installs 
 - **The Whisper prompt is fake preceding transcript, not an instruction.** Whisper continues whatever text the prompt looks like. A glossary-style prompt reads like a meeting transcript's cast list and makes Whisper invent speaker labels. Keep the first-person dictation framing in `vocabulary_prompt`.
 - **MAI-Transcribe-2 rejects more than 50 phrases** with HTTP 400, so `cloud/mai.rs` caps the dictionary at 50.
 - **StepFun's Step-Audio 3 ASR is not OpenAI-compatible.** It takes base64 audio in JSON on `/v1/audio/asr/sse` and answers with server-sent events; the transcript is the `text` of the `transcript.text.done` event. It has no language detection and no German. Its `hotwords` field is only documented for the China endpoint, so the dictionary is not sent.
+- **Every transcript ends a sentence.** `transcribe_file` in `session.rs` passes every engine's text through `punctuation::with_final_period`, which adds a period only when the text ends right after a letter or digit. Scribe v2 leaves the period off the last sentence of most dictations. The benchmark applies the same step, so it scores what is pasted.
 - **The dictionary is never sent to rewrite models.** A model once pasted the word list back instead of the dictation.
+- **Nemotron's runtime is pinned.** NVIDIA only publishes macOS builds of NeMo-Speech.cpp under a moving `nightly` tag, so the app downloads an unchanged copy from this repository's `nemo-speech-<commit>` release and checks its SHA-256. To update it, attach the new archive to a new release and change `RUNTIME_*` in `nemotron/mod.rs`.
+- **Nemotron gets no dictionary and no language.** Its server rejects `speech_contexts` for this model with HTTP 400, and any `language` hint, even the right one, can drop all punctuation from recordings longer than a minute. The model detects the language itself.
+- **The Nemotron server never outlives its use.** It is stopped after 5 idle minutes, on switching engines and at exit, and a leftover one from a crash is killed at launch; it holds about 22 GB of memory.
 - **Free the Whisper context before exit.** ggml's Metal backend asserts at process exit if a model is still loaded. `RunEvent::Exit` unloads it.
 - **Nothing personal in the repo.** The dictionary, recordings, keys and models live in the user's data folder, never in the repository.

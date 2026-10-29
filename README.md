@@ -25,9 +25,11 @@ Coming from version 1? See [Upgrading from version 1](#upgrading-from-version-1-
 | Engine | Where your audio goes | What you need |
 |---|---|---|
 | 🔒 **Whisper** (on this computer) | **Nowhere.** It is transcribed on your computer and works without internet. | A one-time model download in Settings (148 MB to 1.6 GB) |
+| 🔒 **Nemotron 3.5 Transcribe** (on this Mac) | **Nowhere.** It is transcribed on your Mac and works without internet. | A Mac with Apple silicon and 32 GB of memory or more, and a one-time download in Settings (21 or 37 GB) |
 | ☁️ **MAI-Transcribe-2** | Uploaded to **Microsoft Azure** | Your own Azure Speech key and endpoint |
 | ☁️ **Scribe v2** | Uploaded to **ElevenLabs** | Your own ElevenLabs API key |
 | ☁️ **Universal-3.5 Pro** | Uploaded to **AssemblyAI** | Your own AssemblyAI API key |
+| ☁️ **GPT Transcribe** | Uploaded to **OpenAI** (OpenAI does not train on API audio) | Your own OpenAI API key |
 | ☁️ **Step-Audio 3 ASR** | Uploaded to **StepFun** (servers in the US; StepFun may use recordings to improve its models) | Your own StepFun API key |
 
 How you can tell at a glance:
@@ -98,6 +100,17 @@ Open Settings again any time from the menu bar icon → **Settings…**.
 
 The model is loaded when you press the hotkey and unloaded after 5 minutes without dictation, so the app uses almost no memory in between. The language is detected automatically. If it guesses wrong on short recordings, pick your language under **Spoken language**.
 
+### Nemotron 3.5 Transcribe (Macs with Apple silicon)
+
+NVIDIA's open speech model, a second offline engine next to Whisper. It is more accurate than Whisper and adds punctuation on its own, but it is big. On an M3 Max it transcribes 15 seconds of speech in about a second.
+
+| Model | Download | Memory while loaded | Good for |
+|---|---|---|---|
+| **Compact (IQ4_NL)** | 21 GB | about 20 GB | **Macs with 32 GB.** Can leave out punctuation in recordings longer than a minute |
+| Full (Q8_0) | 37 GB | about 34 GB | Macs with 64 GB. Closest to NVIDIA's original, punctuates long recordings reliably |
+
+Pick **On this Mac** in Settings, open **Nemotron 3.5 Transcribe** and click **Download** next to a model. It loads while you talk and frees its memory after 5 minutes without dictation; the first recording after that waits for it to load. It detects the language by itself and does not use your dictionary.
+
 ## Using a cloud engine (optional)
 
 Cloud engines can be faster on older computers and handle some accents or mixed languages better. Each provider bills you for your usage on your own account.
@@ -157,7 +170,7 @@ Everything lives in one folder:
 | Windows | `%APPDATA%\SpeechToText\` |
 | Linux | `~/.local/share/SpeechToText/` |
 
-Inside it: `models/` (Whisper models), `recordings/` (kept 24 hours), `dictionary.txt`, `settings.json`, `profiles.json` (app profiles and rewrite models) and `api-keys.enc` (your keys, encrypted).
+Inside it: `models/` (Whisper models, and Nemotron in `models/nemotron/`), `runtimes/` (NVIDIA's NeMo-Speech.cpp, downloaded with Nemotron), `recordings/` (kept 24 hours), `dictionary.txt`, `settings.json`, `profiles.json` (app profiles and rewrite models) and `api-keys.enc` (your keys, encrypted).
 
 To remove everything, quit the app, uninstall it, and delete that folder.
 
@@ -174,6 +187,8 @@ This repository contains a [`CLAUDE.md`](CLAUDE.md) (also readable as `AGENTS.md
 - [Tauri](https://tauri.app) runs the app on all three systems (MIT or Apache 2.0).
 - [whisper.cpp](https://github.com/ggml-org/whisper.cpp) by Georgi Gerganov and contributors runs the offline engine (MIT), through [whisper-rs](https://crates.io/crates/whisper-rs).
 - The Whisper models are by OpenAI (MIT), converted for whisper.cpp and downloaded from [Hugging Face](https://huggingface.co/ggerganov/whisper.cpp).
+- [NeMo-Speech.cpp](https://github.com/NVIDIA/NeMo-Speech.cpp) by NVIDIA runs Nemotron 3.5 Transcribe (Apache 2.0). It is downloaded together with the model, not bundled with the app.
+- [Nemotron 3.5 Transcribe](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Transcribe-30B-A4B) is by NVIDIA (OpenMDW 1.1), in a GGUF conversion by [AtomicChat](https://huggingface.co/AtomicChat/NVIDIA-Nemotron-3.5-Transcribe-30B-A4B-GGUF).
 - [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) by Jonas van den Berg pauses and resumes media playback on macOS (BSD 3-Clause, included in `vendor/`).
 
 ## License
