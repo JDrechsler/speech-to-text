@@ -28,6 +28,7 @@ Coming from version 1? See [Upgrading from version 1](#upgrading-from-version-1-
 | ☁️ **MAI-Transcribe-2** | Uploaded to **Microsoft Azure** | Your own Azure Speech key and endpoint |
 | ☁️ **Scribe v2** | Uploaded to **ElevenLabs** | Your own ElevenLabs API key |
 | ☁️ **Universal-3.5 Pro** | Uploaded to **AssemblyAI** | Your own AssemblyAI API key |
+| ☁️ **GPT Transcribe** | Uploaded to **OpenAI** (OpenAI does not train on API audio) | Your own OpenAI API key |
 | ☁️ **Step-Audio 3 ASR** | Uploaded to **StepFun** (servers in the US; StepFun may use recordings to improve its models) | Your own StepFun API key |
 
 How you can tell at a glance:

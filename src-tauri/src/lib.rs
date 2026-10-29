@@ -1,4 +1,6 @@
 mod audio;
+#[cfg(test)]
+mod benchmark;
 #[cfg(target_os = "macos")]
 mod audio_devices;
 mod cloud;

@@ -24,7 +24,7 @@ Do these in order and report what you did. Prefer the Settings window whenever t
    ```
    The data folder is `~/Library/Application Support/SpeechToText` on macOS, `%APPDATA%\SpeechToText` on Windows and `~/.local/share/SpeechToText` on Linux. Model ids, file names and byte sizes are listed in `CATALOG` in `src-tauri/src/models.rs`. A file whose size does not match the catalog is a broken download.
 
-3. **Cloud engines (only if the user wants one).** Never ask the user to paste an API key into the chat. Keys are entered in Settings and saved to `api-keys.enc` in the data folder, encrypted with a key derived from this computer's hardware ID; there is no command-line way to add one. The Azure endpoint is not secret and lives in `settings.json` as `azureEndpoint`. The engine is `settings.json` → `engine`: `whisper`, `mai`, `scribe`, `assembly` or `stepfun`. Quit the app before editing `settings.json`.
+3. **Cloud engines (only if the user wants one).** Never ask the user to paste an API key into the chat. Keys are entered in Settings and saved to `api-keys.enc` in the data folder, encrypted with a key derived from this computer's hardware ID; there is no command-line way to add one. The Azure endpoint is not secret and lives in `settings.json` as `azureEndpoint`. The engine is `settings.json` → `engine`: `whisper`, `mai`, `scribe`, `assembly`, `openai` or `stepfun`. Quit the app before editing `settings.json`.
 
 4. **Permissions** cannot be granted from the terminal. On macOS, tell the user to allow Microphone on the first recording and Accessibility when asked (needed for auto-paste).
 

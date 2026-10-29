@@ -8,6 +8,7 @@ pub enum Engine {
     Scribe,
     Assembly,
     Stepfun,
+    Openai,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -45,6 +46,12 @@ pub const ASSEMBLYAI_KEY: CredentialField = CredentialField {
     placeholder: "AssemblyAI API key",
     is_secret: true,
 };
+pub const OPENAI_KEY: CredentialField = CredentialField {
+    id: "OPENAI_API_KEY",
+    label: "API key",
+    placeholder: "OpenAI API key",
+    is_secret: true,
+};
 pub const STEPFUN_KEY: CredentialField = CredentialField {
     id: "STEPFUN_API_KEY",
     label: "API key",
@@ -67,11 +74,12 @@ pub struct EngineInfo {
 }
 
 impl Engine {
-    pub const ALL: [Engine; 5] = [
+    pub const ALL: [Engine; 6] = [
         Engine::Whisper,
         Engine::Mai,
         Engine::Scribe,
         Engine::Assembly,
+        Engine::Openai,
         Engine::Stepfun,
     ];
 
@@ -86,6 +94,7 @@ impl Engine {
             Engine::Scribe => "Scribe v2",
             Engine::Assembly => "Universal-3.5 Pro",
             Engine::Stepfun => "Step-Audio 3 ASR",
+            Engine::Openai => "GPT Transcribe",
         }
     }
 
@@ -96,6 +105,7 @@ impl Engine {
             Engine::Scribe => "ElevenLabs",
             Engine::Assembly => "AssemblyAI",
             Engine::Stepfun => "StepFun",
+            Engine::Openai => "OpenAI",
         }
     }
 
@@ -106,6 +116,7 @@ impl Engine {
             Engine::Scribe => "Scribe",
             Engine::Assembly => "AssemblyAI",
             Engine::Stepfun => "StepFun",
+            Engine::Openai => "GPT Transcribe",
         }
     }
 
@@ -116,6 +127,7 @@ impl Engine {
             Engine::Scribe => "scribe",
             Engine::Assembly => "assembly",
             Engine::Stepfun => "stepfun",
+            Engine::Openai => "openai",
         }
     }
 
@@ -138,6 +150,7 @@ impl Engine {
             Engine::Scribe => "The fastest cloud engine in this app. Mixed-language recordings can lose the minority language.",
             Engine::Assembly => "Verbatim and strong with several languages in one recording. A few seconds slower.",
             Engine::Stepfun => "StepFun's newest speech model. English, Spanish, French, Chinese, Japanese and Korean, no German. StepFun may use recordings to improve its models.",
+            Engine::Openai => "OpenAI's newest speech model. Handles several languages in one recording and uses your dictionary.",
         }
     }
 
@@ -148,6 +161,7 @@ impl Engine {
             Engine::Scribe => &[ELEVENLABS_KEY],
             Engine::Assembly => &[ASSEMBLYAI_KEY],
             Engine::Stepfun => &[STEPFUN_KEY],
+            Engine::Openai => &[OPENAI_KEY],
         }
     }
 
@@ -158,6 +172,7 @@ impl Engine {
             Engine::Scribe => Some("https://elevenlabs.io/app/developers/api-keys"),
             Engine::Assembly => Some("https://www.assemblyai.com/dashboard/api-keys"),
             Engine::Stepfun => Some("https://platform.stepfun.ai/interface-key"),
+            Engine::Openai => Some("https://platform.openai.com/api-keys"),
         }
     }
 
@@ -168,6 +183,7 @@ impl Engine {
             Engine::Scribe => Some("https://elevenlabs.io/privacy-policy"),
             Engine::Assembly => Some("https://www.assemblyai.com/legal/privacy-policy"),
             Engine::Stepfun => Some("https://platform.stepfun.ai/docs/en/agreement/userprivacy"),
+            Engine::Openai => Some("https://developers.openai.com/api/docs/guides/your-data"),
         }
     }
 
@@ -178,6 +194,7 @@ impl Engine {
             Engine::Scribe => "scribe-v2".into(),
             Engine::Assembly => "assemblyai-universal-3.5-pro".into(),
             Engine::Stepfun => "stepfun-stepaudio-3-asr-max".into(),
+            Engine::Openai => "openai-gpt-transcribe".into(),
         }
     }
 

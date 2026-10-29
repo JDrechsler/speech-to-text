@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-export type EngineId = "whisper" | "mai" | "scribe" | "assembly" | "stepfun";
+export type EngineId = "whisper" | "mai" | "scribe" | "assembly" | "stepfun" | "openai";
 export type Phase = "idle" | "recording" | "finishing";
 
 export interface Badge {
@@ -238,6 +238,7 @@ const HISTORY_LABEL_PREFIXES: [string, EngineId][] = [
   ["scribe", "scribe"],
   ["assemblyai", "assembly"],
   ["stepfun", "stepfun"],
+  ["openai", "openai"],
 ];
 
 export function engineOfHistoryLabel(label: string): EngineId | undefined {

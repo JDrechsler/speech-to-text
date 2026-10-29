@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.0
+
+- New cloud engine: GPT Transcribe by OpenAI. It handles several languages in one recording and uses your dictionary. Add your OpenAI API key in Settings under Cloud.
+- Fixed Whisper sometimes leaving out whole passages of longer dictations when you have words in your dictionary.
+
 ## 2.0.2
 
 - Fixed the microphone staying on after you finished dictating, which made macOS show it in use even while you were not recording. It now turns off as soon as you stop or cancel a recording.
