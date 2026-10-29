@@ -16,7 +16,6 @@ mod models;
 mod paste;
 mod paths;
 mod profiles;
-mod punctuation;
 mod rewrite;
 mod secrets;
 mod session;

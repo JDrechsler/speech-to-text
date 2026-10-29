@@ -9,7 +9,7 @@ use serde_json::json;
 use crate::cloud::{self, CloudRequest};
 use crate::engines::Engine;
 use crate::whisper::{self, LocalWhisper};
-use crate::{dictionary, models, punctuation, settings};
+use crate::{dictionary, models, settings};
 
 struct Engines {
     whisper: LocalWhisper,
@@ -106,7 +106,7 @@ fn benchmark_engines_on_recordings() {
             }
             let seconds = seconds_of(wav);
             let started = Instant::now();
-            let result = engines.transcribe(engine, wav, seconds).map(|text| punctuation::with_final_period(&text));
+            let result = engines.transcribe(engine, wav, seconds);
             let elapsed = started.elapsed().as_secs_f64();
             let row = json!({
                 "recording": recording,

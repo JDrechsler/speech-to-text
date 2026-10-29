@@ -4,7 +4,6 @@
 
 - New cloud engine: GPT Transcribe by OpenAI. It handles several languages in one recording and uses your dictionary. Add your OpenAI API key in Settings under Cloud.
 - Fixed Whisper sometimes leaving out whole passages of longer dictations when you have words in your dictionary.
-- Every dictation now ends with a period when the text stops right after a word. Scribe in particular leaves it off the last sentence. Endings with a question mark, exclamation mark or other punctuation stay as they are.
 
 ## 2.0.2
 

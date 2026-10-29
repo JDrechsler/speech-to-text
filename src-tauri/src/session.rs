@@ -17,7 +17,6 @@ use crate::media;
 use crate::microphone;
 use crate::paste;
 use crate::profiles::{self, ActiveProfile};
-use crate::punctuation;
 use crate::rewrite::{self, RewriteError};
 use crate::settings::Settings;
 use crate::state::{self, Phase, Shared};
@@ -244,17 +243,6 @@ async fn finish(app: &AppHandle) {
 }
 
 pub async fn transcribe_file(
-    state: &Shared,
-    engine: Engine,
-    path: &Path,
-    duration: f64,
-    on_status: impl Fn(String) + Send + Sync + 'static,
-) -> Result<String, String> {
-    let text = transcribe_with(state, engine, path, duration, on_status).await?;
-    Ok(punctuation::with_final_period(&text))
-}
-
-async fn transcribe_with(
     state: &Shared,
     engine: Engine,
     path: &Path,
