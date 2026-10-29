@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "lowercase")]
 pub enum Engine {
     Whisper,
-    Nemotron,
     Mai,
     Scribe,
     Assembly,
@@ -75,9 +74,8 @@ pub struct EngineInfo {
 }
 
 impl Engine {
-    pub const ALL: [Engine; 7] = [
+    pub const ALL: [Engine; 6] = [
         Engine::Whisper,
-        Engine::Nemotron,
         Engine::Mai,
         Engine::Scribe,
         Engine::Assembly,
@@ -86,21 +84,12 @@ impl Engine {
     ];
 
     pub fn is_local(self) -> bool {
-        matches!(self, Engine::Whisper | Engine::Nemotron)
-    }
-
-    pub fn is_available(self) -> bool {
-        self != Engine::Nemotron || cfg!(all(target_os = "macos", target_arch = "aarch64"))
-    }
-
-    pub fn available() -> impl Iterator<Item = Engine> {
-        Engine::ALL.into_iter().filter(|engine| engine.is_available())
+        self == Engine::Whisper
     }
 
     pub fn display_name(self) -> &'static str {
         match self {
             Engine::Whisper => "Whisper",
-            Engine::Nemotron => "Nemotron 3.5 Transcribe",
             Engine::Mai => "MAI-Transcribe-2",
             Engine::Scribe => "Scribe v2",
             Engine::Assembly => "Universal-3.5 Pro",
@@ -112,7 +101,6 @@ impl Engine {
     pub fn provider(self) -> &'static str {
         match self {
             Engine::Whisper => "whisper.cpp",
-            Engine::Nemotron => "NVIDIA",
             Engine::Mai => "Microsoft Azure",
             Engine::Scribe => "ElevenLabs",
             Engine::Assembly => "AssemblyAI",
@@ -124,7 +112,6 @@ impl Engine {
     pub fn short_name(self) -> &'static str {
         match self {
             Engine::Whisper => "Whisper",
-            Engine::Nemotron => "Nemotron",
             Engine::Mai => "MAI",
             Engine::Scribe => "Scribe",
             Engine::Assembly => "AssemblyAI",
@@ -136,7 +123,6 @@ impl Engine {
     pub fn id(self) -> &'static str {
         match self {
             Engine::Whisper => "whisper",
-            Engine::Nemotron => "nemotron",
             Engine::Mai => "mai",
             Engine::Scribe => "scribe",
             Engine::Assembly => "assembly",
@@ -160,7 +146,6 @@ impl Engine {
     pub fn summary(self) -> &'static str {
         match self {
             Engine::Whisper => "OpenAI's open Whisper model running on your own computer. Works without internet.",
-            Engine::Nemotron => "NVIDIA's open speech model running on your own computer. Works without internet. Needs a Mac with 32 GB of memory or more.",
             Engine::Mai => "Microsoft's MAI model on Azure Speech. Clean punctuation, detects the language by itself.",
             Engine::Scribe => "The fastest cloud engine in this app. Mixed-language recordings can lose the minority language.",
             Engine::Assembly => "Verbatim and strong with several languages in one recording. A few seconds slower.",
@@ -171,7 +156,7 @@ impl Engine {
 
     pub fn credential_fields(self) -> &'static [CredentialField] {
         match self {
-            Engine::Whisper | Engine::Nemotron => &[],
+            Engine::Whisper => &[],
             Engine::Mai => &[AZURE_SPEECH_KEY, AZURE_SPEECH_ENDPOINT],
             Engine::Scribe => &[ELEVENLABS_KEY],
             Engine::Assembly => &[ASSEMBLYAI_KEY],
@@ -182,7 +167,7 @@ impl Engine {
 
     pub fn key_help_url(self) -> Option<&'static str> {
         match self {
-            Engine::Whisper | Engine::Nemotron => None,
+            Engine::Whisper => None,
             Engine::Mai => Some("https://learn.microsoft.com/azure/ai-services/speech-service/mai-transcribe"),
             Engine::Scribe => Some("https://elevenlabs.io/app/developers/api-keys"),
             Engine::Assembly => Some("https://www.assemblyai.com/dashboard/api-keys"),
@@ -193,7 +178,7 @@ impl Engine {
 
     pub fn privacy_policy_url(self) -> Option<&'static str> {
         match self {
-            Engine::Whisper | Engine::Nemotron => None,
+            Engine::Whisper => None,
             Engine::Mai => Some("https://learn.microsoft.com/azure/foundry/responsible-ai/speech-service/speech-to-text/data-privacy-security"),
             Engine::Scribe => Some("https://elevenlabs.io/privacy-policy"),
             Engine::Assembly => Some("https://www.assemblyai.com/legal/privacy-policy"),
@@ -202,10 +187,9 @@ impl Engine {
         }
     }
 
-    pub fn history_label(self, model_id: &str) -> String {
+    pub fn history_label(self, whisper_model_id: &str) -> String {
         match self {
-            Engine::Whisper => format!("whisper-{model_id}"),
-            Engine::Nemotron => model_id.to_string(),
+            Engine::Whisper => format!("whisper-{whisper_model_id}"),
             Engine::Mai => "mai-transcribe-2".into(),
             Engine::Scribe => "scribe-v2".into(),
             Engine::Assembly => "assemblyai-universal-3.5-pro".into(),

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -110,59 +109,42 @@ pub struct Downloads {
 }
 
 impl Downloads {
-    pub fn is_running(&self, id: &str) -> bool {
-        self.cancelled.lock().unwrap().contains_key(id)
+    pub fn is_running(&self, model: &WhisperModel) -> bool {
+        self.cancelled.lock().unwrap().contains_key(model.id)
     }
 
-    pub fn cancel(&self, id: &str) {
-        if let Some(flag) = self.cancelled.lock().unwrap().get(id) {
+    pub fn cancel(&self, model: &WhisperModel) {
+        if let Some(flag) = self.cancelled.lock().unwrap().get(model.id) {
             flag.store(true, Ordering::Relaxed);
         }
-    }
-
-    pub async fn run<F, Fut>(&self, id: &'static str, work: F) -> Result<(), String>
-    where
-        F: FnOnce(Arc<AtomicBool>) -> Fut,
-        Fut: Future<Output = Result<(), String>>,
-    {
-        let flag = Arc::new(AtomicBool::new(false));
-        self.cancelled.lock().unwrap().insert(id, flag.clone());
-        let result = work(flag).await;
-        self.cancelled.lock().unwrap().remove(id);
-        result
     }
 
     pub async fn download(
         &self,
         model: &'static WhisperModel,
-        mut on_progress: impl FnMut(f64),
+        on_progress: impl FnMut(f64),
     ) -> Result<(), String> {
-        self.run(model.id, |cancelled| async move {
-            fetch_file(&model.download_url(), &model.path(), model.bytes, &cancelled, |written| {
-                on_progress((written as f64 / model.bytes as f64).min(1.0))
-            })
-            .await
-        })
-        .await
+        let flag = Arc::new(AtomicBool::new(false));
+        self.cancelled.lock().unwrap().insert(model.id, flag.clone());
+        let result = fetch(model, &flag, on_progress).await;
+        self.cancelled.lock().unwrap().remove(model.id);
+        result
     }
 }
 
-pub async fn fetch_file(
-    url: &str,
-    destination: &Path,
-    expected_bytes: u64,
+async fn fetch(
+    model: &WhisperModel,
     cancelled: &AtomicBool,
-    mut on_bytes: impl FnMut(u64),
+    mut on_progress: impl FnMut(f64),
 ) -> Result<(), String> {
-    let response = reqwest::get(url)
+    let response = reqwest::get(model.download_url())
         .await
         .map_err(|error| format!("Download failed: {error}"))?;
     let status = response.status().as_u16();
     if status != 200 {
         return Err(format!("Download failed (HTTP {status}). Try again later."));
     }
-    let file_name = destination.file_name().unwrap_or_default().to_string_lossy();
-    let partial = destination.with_file_name(format!("{file_name}.part"));
+    let partial = model.path().with_extension("bin.part");
     let mut file = tokio::fs::File::create(&partial)
         .await
         .map_err(|error| error.to_string())?;
@@ -177,15 +159,18 @@ pub async fn fetch_file(
         let chunk = chunk.map_err(|error| format!("Download interrupted: {error}"))?;
         file.write_all(&chunk).await.map_err(|error| error.to_string())?;
         written += chunk.len() as u64;
-        on_bytes(written);
+        on_progress((written as f64 / model.bytes as f64).min(1.0));
     }
     file.flush().await.map_err(|error| error.to_string())?;
     drop(file);
-    if written != expected_bytes {
+    if written != model.bytes {
         let _ = tokio::fs::remove_file(&partial).await;
-        return Err(format!("Download incomplete ({written} of {expected_bytes} bytes). Try again."));
+        return Err(format!(
+            "Download incomplete ({written} of {} bytes). Try again.",
+            model.bytes
+        ));
     }
-    tokio::fs::rename(&partial, destination)
+    tokio::fs::rename(&partial, model.path())
         .await
         .map_err(|error| error.to_string())
 }

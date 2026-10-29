@@ -13,7 +13,6 @@ mod login_item;
 mod media;
 mod microphone;
 mod models;
-mod nemotron;
 mod paste;
 mod paths;
 mod profiles;
@@ -84,7 +83,6 @@ fn start_hourly_cleanup() {
 }
 
 fn finish_launch(app: &AppHandle) {
-    nemotron::stop_leftover_server();
     let state = state::shared(app);
     if !state.settings().keychain_imported {
         import_mac_app_keys();
@@ -135,11 +133,7 @@ pub fn run() {
 
     app.run(|app, event| match event {
         RunEvent::ExitRequested { api, code: None, .. } => api.prevent_exit(),
-        RunEvent::Exit => {
-            let state = state::shared(app);
-            state.whisper.unload();
-            state.nemotron.stop();
-        }
+        RunEvent::Exit => state::shared(app).whisper.unload(),
         _ => {}
     });
 }

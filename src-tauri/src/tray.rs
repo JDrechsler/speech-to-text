@@ -157,7 +157,7 @@ fn engine_menu(state: &Shared) -> Entry {
     let mut entries = Vec::new();
     for (header, local) in groups {
         entries.push(Entry::Header { title: header, local });
-        for engine in Engine::available().filter(|engine| engine.is_local() == local) {
+        for engine in Engine::ALL.into_iter().filter(|engine| engine.is_local() == local) {
             let ready = state::engine_setup_hint(engine, state).is_none();
             let title =
                 if ready { engine.menu_title() } else { format!("{} (set up…)", engine.menu_title()) };

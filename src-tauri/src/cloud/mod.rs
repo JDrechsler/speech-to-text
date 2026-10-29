@@ -65,7 +65,7 @@ pub async fn transcribe(
 
 async fn attempt(request: &CloudRequest<'_>) -> Result<String, CloudError> {
     match request.engine {
-        Engine::Whisper | Engine::Nemotron => Err(CloudError::LocalEngine),
+        Engine::Whisper => Err(CloudError::LocalEngine),
         Engine::Mai => mai::transcribe(request).await,
         Engine::Scribe => scribe::transcribe(request).await,
         Engine::Assembly => assembly::transcribe(request).await,

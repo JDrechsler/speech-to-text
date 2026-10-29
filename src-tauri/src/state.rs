@@ -8,7 +8,6 @@ use crate::audio::Recorder;
 use crate::engines::{self, Engine};
 use crate::media::Media;
 use crate::models::{self, Downloads};
-use crate::nemotron::{self, NemotronServer};
 use crate::profiles::ActiveProfile;
 use crate::secrets;
 use crate::settings::{self, Settings};
@@ -43,7 +42,6 @@ pub struct OverlayState {
 pub struct AppState {
     pub settings: Mutex<Settings>,
     pub whisper: LocalWhisper,
-    pub nemotron: NemotronServer,
     pub downloads: Downloads,
     pub media: Media,
     pub generation: AtomicU64,
@@ -60,7 +58,6 @@ impl AppState {
         Arc::new(AppState {
             settings: Mutex::new(settings::load()),
             whisper: LocalWhisper::default(),
-            nemotron: NemotronServer::default(),
             downloads: Downloads::default(),
             media,
             generation: AtomicU64::new(0),
@@ -86,28 +83,8 @@ impl AppState {
         *self.phase.lock().unwrap()
     }
 
-    pub fn unload_local_engines_except(&self, engine: Engine) {
-        if engine != Engine::Whisper {
-            self.whisper.unload();
-        }
-        if engine != Engine::Nemotron {
-            self.nemotron.stop();
-        }
-    }
-
     pub fn whisper_model(&self) -> &'static models::WhisperModel {
         models::selected(self.settings().whisper_model.as_deref())
-    }
-
-    pub fn nemotron_model(&self) -> &'static nemotron::NemotronModel {
-        nemotron::selected(self.settings().nemotron_model.as_deref())
-    }
-
-    pub fn history_label(&self, engine: Engine) -> String {
-        match engine {
-            Engine::Nemotron => engine.history_label(self.nemotron_model().id),
-            _ => engine.history_label(self.whisper_model().id),
-        }
     }
 
     pub fn overlay_state(&self) -> OverlayState {
@@ -117,35 +94,37 @@ impl AppState {
             phase: self.phase(),
             status: self.status.lock().unwrap().clone(),
             context_line: profile.as_ref().and_then(ActiveProfile::context_line),
-            engine_badge: self.engine_badge(engine),
+            engine_badge: engine_badge(engine),
             rewrite_badge: profile
                 .filter(ActiveProfile::rewrites)
                 .and_then(|profile| profile.rewriter)
                 .map(|model| Badge { is_local: model.is_local(), text: model.badge() }),
         }
     }
+}
 
-    fn engine_badge(&self, engine: Engine) -> Badge {
-        let text = match engine {
-            Engine::Whisper => format!("On {} · Whisper {}", engines::THIS_DEVICE, self.whisper_model().name),
-            Engine::Nemotron => format!("On {} · Nemotron {}", engines::THIS_DEVICE, self.nemotron_model().name),
-            _ => format!("Cloud · {}", engine.provider()),
-        };
-        Badge { is_local: engine.is_local(), text }
+pub fn engine_badge(engine: Engine) -> Badge {
+    Badge {
+        is_local: engine.is_local(),
+        text: if engine.is_local() {
+            format!("On {}", engines::THIS_DEVICE)
+        } else {
+            format!("Cloud · {}", engine.provider())
+        },
     }
 }
 
 pub fn choose_engine(state: &Shared, engine: Engine) -> Settings {
     let settings = state.update_settings(|settings| {
         settings.engine = engine;
-        if engine.is_local() {
-            settings.last_local_engine = Some(engine);
-        } else {
+        if !engine.is_local() {
             settings.last_cloud_engine = Some(engine);
         }
     });
-    let state = state.clone();
-    std::thread::spawn(move || state.unload_local_engines_except(engine));
+    if !engine.is_local() {
+        let state = state.clone();
+        std::thread::spawn(move || state.whisper.unload());
+    }
     settings
 }
 
@@ -174,14 +153,10 @@ pub fn credential_value(field: &engines::CredentialField, settings: &Settings) -
 }
 
 pub fn engine_setup_hint(engine: Engine, state: &AppState) -> Option<String> {
-    if engine == Engine::Whisper {
+    if engine.is_local() {
         let model = state.whisper_model();
         return (!model.is_installed())
             .then(|| "No Whisper model downloaded yet. Open Settings and download one.".to_string());
-    }
-    if engine == Engine::Nemotron {
-        return (!state.nemotron_model().is_installed())
-            .then(|| "Nemotron 3.5 Transcribe is not downloaded yet. Open Settings and download it.".to_string());
     }
     let settings = state.settings();
     let missing = engine

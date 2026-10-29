@@ -9,7 +9,6 @@ use crate::audio::{self, InputDevice};
 use crate::dictionary;
 use crate::engines::{self, Engine, EngineInfo};
 use crate::models::{self, WhisperModel};
-use crate::nemotron::{self, NemotronModel};
 use crate::login_item;
 use crate::paste;
 use crate::paths;
@@ -36,11 +35,6 @@ pub fn handler() -> impl Fn(tauri::ipc::Invoke) -> bool + Send + Sync + 'static 
         download_whisper_model,
         cancel_whisper_download,
         delete_whisper_model,
-        nemotron_models,
-        select_nemotron_model,
-        download_nemotron,
-        cancel_nemotron_download,
-        delete_nemotron,
         saved_credentials,
         save_credential,
         remove_credential,
@@ -84,7 +78,7 @@ fn get_settings(app: AppHandle) -> Settings {
 
 #[tauri::command]
 fn engine_catalog() -> Vec<EngineInfo> {
-    Engine::available().map(Engine::info).collect()
+    Engine::ALL.into_iter().map(Engine::info).collect()
 }
 
 #[derive(Serialize)]
@@ -97,7 +91,8 @@ struct EngineStatus {
 #[tauri::command]
 fn engine_status(app: AppHandle) -> Vec<EngineStatus> {
     let state = state::shared(&app);
-    Engine::available()
+    Engine::ALL
+        .into_iter()
         .map(|id| EngineStatus { id, setup_hint: state::engine_setup_hint(id, &state) })
         .collect()
 }
@@ -109,8 +104,7 @@ fn set_engine(app: AppHandle, engine: Engine) -> Settings {
 
 #[tauri::command]
 fn use_cloud(app: AppHandle, cloud: bool) -> Settings {
-    let settings = state::shared(&app).settings();
-    let engine = if cloud { settings.preferred_cloud() } else { settings.preferred_local() };
+    let engine = if cloud { state::shared(&app).settings().preferred_cloud() } else { Engine::Whisper };
     set_engine(app, engine)
 }
 
@@ -154,7 +148,7 @@ fn whisper_models(app: AppHandle) -> Vec<ModelStatus> {
             model: *model,
             is_installed: model.is_installed(),
             is_selected: model.id == selected,
-            is_downloading: state.downloads.is_running(model.id),
+            is_downloading: state.downloads.is_running(model),
         })
         .collect()
 }
@@ -175,8 +169,10 @@ fn select_whisper_model(app: AppHandle, id: String) -> Result<Settings, String> 
     models::find(&id).ok_or("Unknown model")?;
     let state = state::shared(&app);
     state.whisper.unload();
-    state.update_settings(|settings| settings.whisper_model = Some(id));
-    Ok(state::choose_engine(&state, Engine::Whisper))
+    Ok(state.update_settings(|settings| {
+        settings.whisper_model = Some(id);
+        settings.engine = Engine::Whisper;
+    }))
 }
 
 #[derive(Clone, Serialize)]
@@ -217,7 +213,7 @@ async fn download_whisper_model(app: AppHandle, id: String) -> Result<(), String
 #[tauri::command]
 fn cancel_whisper_download(app: AppHandle, id: String) {
     if let Some(model) = models::find(&id) {
-        state::shared(&app).downloads.cancel(model.id);
+        state::shared(&app).downloads.cancel(model);
     }
 }
 
@@ -229,85 +225,6 @@ fn delete_whisper_model(app: AppHandle, id: String) -> Result<(), String> {
         state.whisper.unload();
     }
     models::delete(model)
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct NemotronModelStatus {
-    #[serde(flatten)]
-    model: NemotronModel,
-    is_installed: bool,
-    is_selected: bool,
-    is_downloading: bool,
-}
-
-#[tauri::command]
-fn nemotron_models(app: AppHandle) -> Vec<NemotronModelStatus> {
-    let state = state::shared(&app);
-    let selected = state.nemotron_model().id;
-    nemotron::CATALOG
-        .iter()
-        .map(|model| NemotronModelStatus {
-            model: *model,
-            is_installed: model.is_installed(),
-            is_selected: model.id == selected,
-            is_downloading: state.downloads.is_running(model.id),
-        })
-        .collect()
-}
-
-#[tauri::command]
-fn select_nemotron_model(app: AppHandle, id: String) -> Result<Settings, String> {
-    nemotron::find(&id).ok_or("Unknown model")?;
-    let state = state::shared(&app);
-    state.nemotron.stop();
-    state.update_settings(|settings| settings.nemotron_model = Some(id));
-    Ok(state::choose_engine(&state, Engine::Nemotron))
-}
-
-#[tauri::command]
-async fn download_nemotron(app: AppHandle, id: String) -> Result<(), String> {
-    let model = nemotron::find(&id).ok_or("Unknown model")?;
-    let state = state::shared(&app);
-    if nemotron::CATALOG.iter().any(|other| state.downloads.is_running(other.id)) {
-        return Err("Another Nemotron download is still running.".into());
-    }
-    let emitter = app.clone();
-    let mut last_permille = -1i64;
-    let result = state
-        .downloads
-        .run(model.id, |cancelled| async move {
-            nemotron::download(model, &cancelled, |fraction| {
-                let permille = (fraction * 1000.0) as i64;
-                if permille != last_permille {
-                    last_permille = permille;
-                    let progress = DownloadProgress { id: model.id, fraction, done: false, error: None };
-                    let _ = emitter.emit("model-download", progress);
-                }
-            })
-            .await
-        })
-        .await;
-    let _ = app.emit(
-        "model-download",
-        DownloadProgress { id: model.id, fraction: 1.0, done: true, error: result.clone().err() },
-    );
-    result
-}
-
-#[tauri::command]
-fn cancel_nemotron_download(app: AppHandle, id: String) {
-    if let Some(model) = nemotron::find(&id) {
-        state::shared(&app).downloads.cancel(model.id);
-    }
-}
-
-#[tauri::command]
-fn delete_nemotron(app: AppHandle, id: String) -> Result<(), String> {
-    let model = nemotron::find(&id).ok_or("Unknown model")?;
-    let state = state::shared(&app);
-    state.nemotron.stop();
-    nemotron::delete(model)
 }
 
 #[tauri::command]

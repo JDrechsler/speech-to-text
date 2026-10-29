@@ -8,13 +8,11 @@ use serde_json::json;
 
 use crate::cloud::{self, CloudRequest};
 use crate::engines::Engine;
-use crate::nemotron::{self, NemotronServer};
 use crate::whisper::{self, LocalWhisper};
 use crate::{dictionary, models, punctuation, settings};
 
 struct Engines {
     whisper: LocalWhisper,
-    nemotron: NemotronServer,
     runtime: tokio::runtime::Runtime,
     settings: settings::Settings,
     dictionary: Vec<String>,
@@ -28,10 +26,6 @@ impl Engines {
                 let model = models::selected(self.settings.whisper_model.as_deref()).path();
                 let prompt = whisper::vocabulary_prompt(&self.dictionary);
                 self.whisper.transcribe(wav, &model, &self.settings.whisper_language, prompt.as_deref())
-            }
-            Engine::Nemotron => {
-                let decoder = nemotron::selected(self.settings.nemotron_model.as_deref()).decoder_path();
-                self.runtime.block_on(self.nemotron.transcribe(wav, &decoder))
             }
             _ => {
                 let request = CloudRequest {
@@ -92,7 +86,6 @@ fn benchmark_engines_on_recordings() {
     assert!(!wanted.is_empty(), "set BENCH_ENGINES");
     let engines = Engines {
         whisper: LocalWhisper::default(),
-        nemotron: NemotronServer::default(),
         runtime: tokio::runtime::Runtime::new().unwrap(),
         settings: settings::load(),
         dictionary: dictionary::terms(),
@@ -127,7 +120,6 @@ fn benchmark_engines_on_recordings() {
             println!("{} {recording} {seconds:.1}s -> {elapsed:.2}s {}", engine.id(), if result.is_ok() { "ok" } else { "ERROR" });
         }
         engines.whisper.unload();
-        engines.nemotron.stop();
     }
 }
 

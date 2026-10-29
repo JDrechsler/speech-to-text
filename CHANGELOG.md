@@ -2,11 +2,10 @@
 
 ## 2.1.0
 
-- New offline engine on Macs with Apple silicon: Nemotron 3.5 Transcribe by NVIDIA. It is more accurate than Whisper and punctuates on its own, and like Whisper your voice never leaves your Mac. It comes in two sizes: Compact, a 21 GB download for Macs with 32 GB of memory or more, and Full, a 37 GB download for Macs with 64 GB. Find it in Settings under On this Mac.
 - New cloud engine: GPT Transcribe by OpenAI. It handles several languages in one recording and uses your dictionary. Add your OpenAI API key in Settings under Cloud.
-- Switching from Cloud back to On this Mac now returns to the offline engine you used last.
 - Fixed Whisper sometimes leaving out whole passages of longer dictations when you have words in your dictionary.
 - Every dictation now ends with a period when the text stops right after a word. Scribe in particular leaves it off the last sentence. Endings with a question mark, exclamation mark or other punctuation stay as they are.
+
 ## 2.0.2
 
 - Fixed the microphone staying on after you finished dictating, which made macOS show it in use even while you were not recording. It now turns off as soon as you stop or cancel a recording.

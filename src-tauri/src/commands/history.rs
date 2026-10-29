@@ -45,13 +45,13 @@ pub async fn retranscribe(app: AppHandle, id: String, engine: Engine) -> Result<
     let text = session::transcribe_file(&state, engine, &history::audio_path(&id), entry.duration, |_| {})
         .await?;
     let text = text.trim().to_string();
-    let label = state.history_label(engine);
+    let label = engine.history_label(state.whisper_model().id);
     let updated = history::update_transcript(&id, &text, &label).ok_or("Could not update the history.")?;
     if !text.is_empty() {
         paste::copy(&text)?;
     }
     if engine.is_local() {
-        session::schedule_local_unload(&state);
+        session::schedule_whisper_unload(&state);
     }
     Ok(updated)
 }
